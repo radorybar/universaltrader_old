@@ -1,0 +1,50 @@
+11:20:56 FractalsLine EURUSD,M1: loaded successfully
+11:20:56 MACD+HistogramDiff+SignalDiff EURUSD,M1: loaded successfully
+11:20:56 FractalsLine EURUSD,M1: initialized
+11:20:56 MACD+HistogramDiff+SignalDiff EURUSD,M1: initialized
+11:23:23 FractalsLine EURUSD,M1: deinitialized
+11:23:23 FractalsLine EURUSD,M1: uninit reason 1
+11:23:23 MACD+HistogramDiff+SignalDiff EURUSD,M1: uninit reason 1
+11:23:23 FractalsLine EURUSD,M1: removed
+11:23:23 MACD+HistogramDiff+SignalDiff EURUSD,M1: removed
+11:23:27 FractalsLine EURUSD,M1: loaded successfully
+11:23:27 MACD+HistogramDiff+SignalDiff EURUSD,M1: loaded successfully
+11:23:27 FractalsLine EURUSD,M1: initialized
+11:23:27 MACD+HistogramDiff+SignalDiff EURUSD,M1: initialized
+11:25:28 FractalsLine EURUSD,M1: deinitialized
+11:25:28 FractalsLine EURUSD,M1: uninit reason 1
+11:25:28 MACD+HistogramDiff+SignalDiff EURUSD,M1: uninit reason 1
+11:25:28 FractalsLine EURUSD,M1: removed
+11:25:28 MACD+HistogramDiff+SignalDiff EURUSD,M1: removed
+14:43:01 FractalsLine EURUSD,M1: loaded successfully
+14:43:01 MACD+HistogramDiff+SignalDiff EURUSD,M1: loaded successfully
+14:43:02 FractalsLine EURUSD,M1: initialized
+14:43:02 MACD+HistogramDiff+SignalDiff EURUSD,M1: initialized
+16:21:06 FractalsLine EURUSD,M1: deinitialized
+16:21:06 FractalsLine EURUSD,M1: uninit reason 1
+16:21:06 MACD+HistogramDiff+SignalDiff EURUSD,M1: uninit reason 1
+16:21:06 FractalsLine EURUSD,M1: removed
+16:21:06 MACD+HistogramDiff+SignalDiff EURUSD,M1: removed
+20:58:46 FractalsLine EURUSD,M1: loaded successfully
+20:58:46 MACD+HistogramDiff+SignalDiff EURUSD,M1: loaded successfully
+20:58:46 FractalsLine EURUSD,M1: initialized
+20:58:46 MACD+HistogramDiff+SignalDiff EURUSD,M1: initialized
+21:04:49 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:10:26 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:11:24 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:13:17 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:22:51 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:24:32 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:28:06 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:29:01 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:29:01 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:31:04 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:32:16 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:33:54 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:35:31 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:37:47 Compiling '038_UniversalSinglePositionTradingWithMoreStrategiesImplemented'
+21:38:39 FractalsLine EURUSD,M1: deinitialized
+21:38:39 FractalsLine EURUSD,M1: uninit reason 1
+21:38:39 MACD+HistogramDiff+SignalDiff EURUSD,M1: uninit reason 1
+21:38:39 FractalsLine EURUSD,M1: removed
+21:38:39 MACD+HistogramDiff+SignalDiff EURUSD,M1: removed
