@@ -1,0 +1,18 @@
+07:47:51 FractalsLine EURUSD,M1: loaded successfully
+07:47:51 MACD+HistogramDiff+SignalDiff EURUSD,M1: loaded successfully
+07:47:52 FractalsLine EURUSD,M1: initialized
+07:47:52 MACD+HistogramDiff+SignalDiff EURUSD,M1: initialized
+08:55:52 FractalsLine EURUSD,M1: deinitialized
+08:55:52 FractalsLine EURUSD,M1: uninit reason 1
+08:55:52 MACD+HistogramDiff+SignalDiff EURUSD,M1: uninit reason 1
+08:55:52 FractalsLine EURUSD,M1: removed
+08:55:52 MACD+HistogramDiff+SignalDiff EURUSD,M1: removed
+10:09:21 FractalsLine EURUSD,M1: loaded successfully
+10:09:21 MACD+HistogramDiff+SignalDiff EURUSD,M1: loaded successfully
+10:09:21 FractalsLine EURUSD,M1: initialized
+10:09:21 MACD+HistogramDiff+SignalDiff EURUSD,M1: initialized
+11:05:29 FractalsLine EURUSD,M1: deinitialized
+11:05:29 FractalsLine EURUSD,M1: uninit reason 1
+11:05:29 MACD+HistogramDiff+SignalDiff EURUSD,M1: uninit reason 1
+11:05:29 FractalsLine EURUSD,M1: removed
+11:05:29 MACD+HistogramDiff+SignalDiff EURUSD,M1: removed
