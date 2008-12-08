@@ -3,7 +3,36 @@
 
 #define     _MAGICNUMBER               123456
 
-int  LONGMA = 140;
+
+//------------------------------------------------------------------
+//------------------------------------------------------------------
+//------------------------------------------------------------------
+// main variables                                                         
+//------------------------------------------------------------------
+//------------------------------------------------------------------
+//------------------------------------------------------------------
+int   _STRATEGY_NUMBER              = 14;
+
+// 1 - PERIOD_M1
+// 2 - PERIOD_M5
+// 3 - PERIOD_M15
+// 4 - PERIOD_M30
+// 5 - PERIOD_H1
+// 6 - PERIOD_H4
+// 7 - PERIOD_D1
+// 8 - PERIOD_W1
+// 9 - PERIOD_MN1
+
+// _STRATEGY_TIMEFRAME_CHOICE
+//extern string poznamka1 = "0 - vyber timeframe podla dropdown menu - premenna _STRATEGY_TIMEFRAME sa ignoruje";
+//extern string poznamka2 = "1 - vyber timeframe podla kodu timeframe 1 - 9";
+int   _STRATEGY_TIMEFRAME_CHOICE    = 0;
+extern int   _STRATEGY_TIMEFRAME           = 1;
+
+//string poznamka1 = "0 - vyber timeframe podla dropdown menu - premenna _STRATEGY_TIMEFRAME sa ignoruje";
+//string poznamka2 = "1 - vyber timeframe podla kodu timeframe 1 - 9";
+//int   _STRATEGY_TIMEFRAME_CHOICE    = 1;
+//int   _STRATEGY_TIMEFRAME           = 1;
 
 //------------------------------------------------------------------
 //------------------------------------------------------------------
@@ -26,8 +55,6 @@ int  LONGMA = 140;
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
-#define     _STRATEGY_NUMBER              8
-
 #define     _CLOSE_LONG                   1
 #define     _CLOSE_SHORT                  2
 #define     _OPEN_LONG                    3
@@ -44,6 +71,8 @@ int  LONGMA = 140;
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 static datetime LastBarTraded = 0;
+
+int   LONGMA = 140;
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
@@ -64,8 +93,8 @@ int start()
    
    if(LastBarTraded())
       return(0);
-   if(OpenNewBar())
-      return(0);
+//   if(!OpenNewBar())
+//      return(0);
 
    if(OrdersTotal() > 0)
    {
@@ -82,6 +111,8 @@ int start()
    }
    
 
+//   if(!OpenNewBar())
+//      return(0);
    if(!TradeAllowed(1))
       return(0);
 
@@ -118,9 +149,9 @@ bool LastBarTraded()
 bool OpenNewBar()
 {
    if(iVolume(Symbol(), Strategy(_STRATEGY_NUMBER, _GET_TRADED_TIMEFRAME), 0) > 1)
-      return(true);
-   else
       return(false);
+   else
+      return(true);
 }
 //------------------------------------------------------------------
 // TradeAllowed function return true if trading is possible         
@@ -225,7 +256,14 @@ void ModifyAllPositions(int MAGICNUMBER, double STOPLOSS, double TAKEPROFIT)
 //------------------------------------------------------------------------------------
 void ModifyPosition(int TICKETNUMBER, double STOPLOSS, double TAKEPROFIT)
 {
+   STOPLOSS = NormalizeDouble(STOPLOSS, 4);
+   TAKEPROFIT = NormalizeDouble(TAKEPROFIT, 4);
+   
    OrderSelect(TICKETNUMBER, SELECT_BY_TICKET);
+   if(NormalizeDouble(OrderStopLoss(), 4) == NormalizeDouble(STOPLOSS, 4) && NormalizeDouble(OrderTakeProfit(), 4) == NormalizeDouble(TAKEPROFIT, 4))
+      return;
+      
+//   Print(OrderTicket(), " - ", OrderOpenPrice(), " - ", OrderStopLoss(), " - ", OrderTakeProfit(), " - ", STOPLOSS, " - ", TAKEPROFIT);
    OrderModify(OrderTicket(), OrderOpenPrice(), STOPLOSS, TAKEPROFIT, 0);
 }
 //------------------------------------------------------------------------------------
@@ -321,6 +359,80 @@ void ClosePosition(int OrderTicket2Close)
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //
+string getStrategyCurrencyByNumber(int _CURRENCY)
+{
+// 1  - EURUSD
+// 2  - GBPUSD
+// 3  - USDCHF
+// 4  - USDJPY
+// 5  - EURJPY
+// 6  - EURCHF
+// 7  - EURGBP
+// 8  - GBPJPY
+// 9  - CHFJPY
+// 10 - GBPCHF
+   switch(_CURRENCY)
+   {
+      case 1:
+         return ("EURUSD");
+      case 2:
+         return ("GBPUSD");
+      case 3:
+         return ("USDCHF");
+      case 4:
+         return ("USDJPY");
+      case 5:
+         return ("EURJPY");
+      case 6:
+         return ("EURCHF");
+      case 7:
+         return ("EURGBP");
+      case 8:
+         return ("GBPJPY");
+      case 9:
+         return ("CHFJPY");
+      case 10:
+         return ("GBPCHF");
+   }
+}
+//------------------------------------------------------------------
+int getStrategyTimeframeByNumber(int _PERIOD)
+{
+// 1 - PERIOD_M1
+// 2 - PERIOD_M5
+// 3 - PERIOD_M15
+// 4 - PERIOD_M30
+// 5 - PERIOD_H1
+// 6 - PERIOD_H4
+// 7 - PERIOD_D1
+// 8 - PERIOD_W1
+// 9 - PERIOD_MN1
+   if(_STRATEGY_TIMEFRAME_CHOICE == 0)
+      return(Period());
+   else
+      switch(_PERIOD)
+      {
+         case 1:
+            return (PERIOD_M1);
+         case 2:
+            return (PERIOD_M5);
+         case 3:
+            return (PERIOD_M15);
+         case 4:
+            return (PERIOD_M30);
+         case 5:
+            return (PERIOD_H1);
+         case 6:
+            return (PERIOD_H4);
+         case 7:
+            return (PERIOD_D1);
+         case 8:
+            return (PERIOD_W1);
+         case 9:
+            return (PERIOD_MN1);
+      }
+}
+//------------------------------------------------------------------
 int HigherTimeframe(int Timeframe)
 {
    switch(Timeframe)
@@ -344,6 +456,20 @@ int HigherTimeframe(int Timeframe)
    }
    
    return (Timeframe);
+}
+//------------------------------------------------------------------------------------
+// Last fractal value
+//------------------------------------------------------------------------------------
+datetime getLastFractalTime(string _SYMBOL, int _TIMEFRAME, bool UpperLower)
+{
+   return (getNthFractalTime(_SYMBOL, _TIMEFRAME, UpperLower, 1));
+}
+//------------------------------------------------------------------------------------
+// Previous fractal value
+//------------------------------------------------------------------------------------
+datetime getPreviousFractalTime(string _SYMBOL, int _TIMEFRAME, bool UpperLower)
+{
+   return (getNthFractalTime(_SYMBOL, _TIMEFRAME, UpperLower, 2));
 }
 //------------------------------------------------------------------------------------
 // Last fractal value
@@ -374,8 +500,6 @@ double getNthFractalValue(string _SYMBOL, int _TIMEFRAME, bool UpperLower, int N
       {
          result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, i);
          
-//         Print(i, Nth, NthFractal, result);
-         
          i++;
          if(result > 0)
          {
@@ -390,8 +514,6 @@ double getNthFractalValue(string _SYMBOL, int _TIMEFRAME, bool UpperLower, int N
       {
          result = iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, i);
 
-//         Print(i, Nth, NthFractal, result);
-         
          i++;
          if(result > 0)
          {
@@ -399,6 +521,46 @@ double getNthFractalValue(string _SYMBOL, int _TIMEFRAME, bool UpperLower, int N
             continue;
          }
       }
+   }
+   
+   return (result);
+}
+//------------------------------------------------------------------------------------
+// NthFractal fractal time
+//------------------------------------------------------------------------------------
+datetime getNthFractalTime(string _SYMBOL, int _TIMEFRAME, bool UpperLower, int Nth)
+{
+   datetime result      = 0;
+   int      i           = 0;
+   int      NthFractal  = Nth;     // NthFractal - put here number of fractal into history you want to get a value for
+      
+   if(UpperLower)
+   {
+      while(i < 1000 && NthFractal > 0)
+      {
+         i++;
+         if(iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, i) > 0)
+         {
+            NthFractal--;
+            continue;
+         }
+      }
+      
+      return(iTime(_SYMBOL, _TIMEFRAME, i));
+   }
+   else
+   {
+      while(i < 1000 && NthFractal > 0)
+      {
+         i++;
+         if(iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, i) > 0)
+         {
+            NthFractal--;
+            continue;
+         }
+      }
+
+      return(iTime(_SYMBOL, _TIMEFRAME, i));
    }
    
    return (result);
@@ -462,6 +624,36 @@ double Strategy(int STRATEGY, int COMMAND)
       case 8:
       {
          return(Strategy_008(COMMAND));
+      }
+// kombinacie vstupov zo strategie 1 a stoploss zo strategie 8
+      case 9:
+      {
+         return(Strategy_009(COMMAND));
+      }
+// fraktaly pre vstup, stop trailing aj vystup
+      case 10:
+      {
+         return(Strategy_010(COMMAND));
+      }
+// 
+      case 11:
+      {
+         return(Strategy_011(COMMAND));
+      }
+// fraktaly - macd - support/resistance levels z rovnakych aj vyssich timeframes podporene macd
+      case 12:
+      {
+         return(Strategy_012(COMMAND));
+      }
+// pure macd neustale v trhu
+      case 13:
+      {
+         return(Strategy_013(COMMAND));
+      }
+// fraktaly ako smernice pre suuport a resistance a ich prerazenie
+      case 14:
+      {
+         return(Strategy_014(COMMAND));
       }
    }
 
@@ -1776,7 +1968,7 @@ double Strategy_008(int COMMAND)
 //         if(MACDHistogram1 <= MACDSignal1 && MACDHistogram > MACDSignal)
 
 //         if(MAFast > MASlow)
-//         if(Ask > MALong)
+         if(Ask > MALong)
 //         if(MAFast > MALong)
          if(MALong1 < MALong)
          if(MACDHistogram > MACDSignal)
@@ -1804,7 +1996,7 @@ double Strategy_008(int COMMAND)
 //         if(MACDHistogram1 >= MACDSignal1 && MACDHistogram < MACDSignal)
 
 //         if(MAFast < MASlow)
-//         if(Bid < MALong)
+         if(Bid < MALong)
 //         if(MAFast < MALong)
          if(MALong1 > MALong)
          if(MACDHistogram < MACDSignal)
@@ -1815,7 +2007,9 @@ double Strategy_008(int COMMAND)
          break;
       }
       case _CLOSE_LONG:
-      {
+      {         
+         break;
+
          if(OrdersTotal() == 1)
          {
             OrderSelect(0, SELECT_BY_POS);
@@ -1825,17 +2019,37 @@ double Strategy_008(int COMMAND)
             {
                if(OrderType() == OP_BUY)
                {
-//                  Print(getLastFractalValue(_SYMBOL, _TIMEFRAME, false), " < ", getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false));
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) > iHigh(_SYMBOL, _TIMEFRAME, 0))
+                  if(iLow(_SYMBOL, _TIMEFRAME, 2) > iLow(_SYMBOL, _TIMEFRAME, 1))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
                   if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
                      result = 1;
                }
             }
          }
-         
+
          break;
       }
       case _CLOSE_SHORT:
       {
+         break;
+
          if(OrdersTotal() == 1)
          {
             OrderSelect(0, SELECT_BY_POS);
@@ -1845,7 +2059,25 @@ double Strategy_008(int COMMAND)
             {
                if(OrderType() == OP_SELL)
                {
-//                  Print(getLastFractalValue(_SYMBOL, _TIMEFRAME, true), " > ", getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true));
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > iLow(_SYMBOL, _TIMEFRAME, 0))
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 2) < iHigh(_SYMBOL, _TIMEFRAME, 1))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
                   if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
                      result = 1;
                }
@@ -1888,7 +2120,7 @@ double Strategy_008(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         break;
+//         break;
 
          if(OrdersTotal() == 1)
          {
@@ -1993,3 +2225,3111 @@ double Strategy_008(int COMMAND)
       
    return(result);
 }
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_009(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = PERIOD_M30;
+   int      _TIMEFRAME_2   = PERIOD_H1;
+   int      _SLOWEMA       = 26;
+   int      _FASTEMA       = 12;
+   int      _MASIGNAL      = 9;
+   int      _MAMETHOD      = MODE_EMA;
+   int      _SLOWMA        = 20;
+   int      _FASTMA        = 10;
+   int      _LONGMA        = LONGMA;
+   int      _SHIFT         = 0;
+   int      _PRICE         = PRICE_OPEN;
+
+   double   result         = 0;
+   
+   double   MAFast;
+   double   MASlow;
+   double   MALong;
+   double   MACDHistogram;
+   double   MACDSignal;
+   double   MACDHistogram2;
+   double   MACDSignal2;
+   double   MAFast1;
+   double   MASlow1;
+   double   MALong1;
+   double   MACDHistogram1;
+   double   MACDSignal1;
+
+   int      i;
+
+   switch(COMMAND)
+   {
+/*
+#define     _CLOSE_LONG                   1
+#define     _CLOSE_SHORT                  2
+#define     _OPEN_LONG                    3
+#define     _OPEN_SHORT                   4
+#define     _GET_LONG_STOPLOSS_PRICE      5
+#define     _GET_SHORT_STOPLOSS_PRICE     6
+#define     _GET_LONG_TAKEPROFIT_PRICE    7
+#define     _GET_SHORT_TAKEPROFIT_PRICE   8
+#define     _GET_LOTS                     9
+#define     _GET_TRAILED_STOPLOSS_PRICE   10
+#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
+#define     _GET_TRADED_TIMEFRAME         12
+*/
+      case _OPEN_LONG:
+      {
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         if(MACDHistogram > MACDSignal)
+         if(MACDHistogram < 0)
+//         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 <= MACDSignal1)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+
+//         if(Ask > MALong)
+//         if(MAFast > MALong)
+//         if(MALong1 < MALong)
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         if(MACDHistogram < MACDSignal)
+         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+//         if(MACDHistogram1 >= MACDSignal1)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+
+//         if(Bid < MALong)
+//         if(MAFast < MALong)
+//         if(MALong1 > MALong)
+            result = 1;
+                  
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(Bid < iLow(_SYMBOL, _TIMEFRAME, 1))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) > iHigh(_SYMBOL, _TIMEFRAME, 0))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(Ask > iHigh(_SYMBOL, _TIMEFRAME, 1))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > iLow(_SYMBOL, _TIMEFRAME, 0))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result > Ask - 10*Point)
+            result = Ask - 10*Point;
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result < Bid + 10*Point)
+            result = Bid + 10*Point;
+         
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+//         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+//            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(result > Bid - 10*Point)
+                     result = Bid - 10*Point;
+                  
+                  if(result <= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+               else
+               {
+                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+//                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(result < Ask + 10*Point)
+                     result = Ask + 10*Point;
+                     
+                  if(result >= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+            }
+         }
+         
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = Bid + MathAbs(Bid - OrderStopLoss());
+               }
+               else
+               {
+                  result = Ask - MathAbs(Ask - OrderStopLoss());
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(result > Bid)
+                     result = Bid;
+                  
+                  if(result <= Bid)
+                     result = 0;
+               }
+               else
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(result < Ask)
+                     result = Ask;
+                     
+                  if(result >= Ask)
+                     result = 0;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_010(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
+   int      _SLOWEMA       = 26;
+   int      _FASTEMA       = 12;
+   int      _MASIGNAL      = 9;
+   int      _MAMETHOD      = MODE_EMA;
+   int      _SLOWMA        = 20;
+   int      _FASTMA        = 10;
+   int      _LONGMA        = LONGMA;
+   int      _SHIFT         = 0;
+   int      _PRICE         = PRICE_OPEN;
+
+   double   result         = 0;
+   
+   double   MAFast;
+   double   MASlow;
+   double   MALong;
+   double   MACDHistogram;
+   double   MACDSignal;
+   double   MACDHistogram2;
+   double   MACDSignal2;
+   double   MAFast1;
+   double   MASlow1;
+   double   MALong1;
+   double   MACDHistogram1;
+   double   MACDSignal1;
+
+   int      i;
+
+   switch(COMMAND)
+   {
+/*
+#define     _CLOSE_LONG                   1
+#define     _CLOSE_SHORT                  2
+#define     _OPEN_LONG                    3
+#define     _OPEN_SHORT                   4
+#define     _GET_LONG_STOPLOSS_PRICE      5
+#define     _GET_SHORT_STOPLOSS_PRICE     6
+#define     _GET_LONG_TAKEPROFIT_PRICE    7
+#define     _GET_SHORT_TAKEPROFIT_PRICE   8
+#define     _GET_LOTS                     9
+#define     _GET_TRAILED_STOPLOSS_PRICE   10
+#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
+#define     _GET_TRADED_TIMEFRAME         12
+*/
+      case _OPEN_LONG:
+      {
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         if(MACDHistogram > MACDSignal)
+         if(MACDHistogram < 0)
+//         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 <= MACDSignal1)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+
+         if(Ask > MALong)
+//         if(MAFast > MALong)
+         if(MALong1 < MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         if(MACDHistogram < MACDSignal)
+         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+         if(MACDHistogram1 >= MACDSignal1)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+
+         if(Bid < MALong)
+//         if(MAFast < MALong)
+         if(MALong1 > MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+            result = 1;
+                  
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         if(MACDHistogram < MACDSignal)
+         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+         if(MACDHistogram1 >= MACDSignal1)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+
+         if(Bid < MALong)
+//         if(MAFast < MALong)
+         if(MALong1 > MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) > iHigh(_SYMBOL, _TIMEFRAME, 0))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(Bid < iLow(_SYMBOL, _TIMEFRAME, 1))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         if(MACDHistogram > MACDSignal)
+         if(MACDHistogram < 0)
+//         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 <= MACDSignal1)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+
+         if(Ask > MALong)
+//         if(MAFast > MALong)
+         if(MALong1 < MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > iLow(_SYMBOL, _TIMEFRAME, 0))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(Ask > iHigh(_SYMBOL, _TIMEFRAME, 1))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
+//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result > Ask - 10*Point)
+            result = Ask - 10*Point;
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
+//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result < Bid + 10*Point)
+            result = Bid + 10*Point;
+         
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+//         break;
+
+         double beq = 0;
+         
+/*
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq > Bid - 10*Point)
+                     beq = Bid - 10*Point;
+                  
+                  if(beq <= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+               else
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq < Ask + 10*Point)
+                     beq = Ask + 10*Point;
+                     
+                  if(beq >= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+            }
+         }
+*/
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+//            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
+                  
+                  if(beq > result)
+                     result = beq;
+                  
+                  if(result > Bid - 10*Point)
+                     result = Bid - 10*Point;
+                  
+                  if(result <= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+               else
+               {
+//                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
+                  
+                  if(beq > result)
+                     result = beq;
+
+                  if(result < Ask + 10*Point)
+                     result = Ask + 10*Point;
+                     
+                  if(result >= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+            }
+         }
+         
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = Bid + MathAbs(Bid - OrderStopLoss());
+               }
+               else
+               {
+                  result = Ask - MathAbs(Ask - OrderStopLoss());
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(result > Bid)
+                     result = Bid;
+                  
+                  if(result <= Bid)
+                     result = 0;
+               }
+               else
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(result < Ask)
+                     result = Ask;
+                     
+                  if(result >= Ask)
+                     result = 0;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_011(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+//   int      _TIMEFRAME     = _TIMEFRAME;
+   int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
+   int      _SLOWEMA       = 26;
+   int      _FASTEMA       = 12;
+   int      _MASIGNAL      = 9;
+   int      _MAMETHOD      = MODE_EMA;
+   int      _SLOWMA        = 20;
+   int      _FASTMA        = 10;
+   int      _LONGMA        = LONGMA;
+   int      _SHIFT         = 0;
+   int      _PRICE         = PRICE_OPEN;
+
+   double   result         = 0;
+   
+   double   MAFast;
+   double   MASlow;
+   double   MALong;
+   double   MACDHistogram;
+   double   MACDSignal;
+   double   MAFast1;
+   double   MASlow1;
+   double   MALong1;
+   double   MACDHistogram1;
+   double   MACDSignal1;
+   double   MAFast2;
+   double   MASlow2;
+   double   MALong2;
+   double   MACDHistogram2;
+   double   MACDSignal2;
+   double   T2_MACDHistogram;
+   double   T2_MACDSignal;
+
+   int      i;
+
+   switch(COMMAND)
+   {
+/*
+#define     _CLOSE_LONG                   1
+#define     _CLOSE_SHORT                  2
+#define     _OPEN_LONG                    3
+#define     _OPEN_SHORT                   4
+#define     _GET_LONG_STOPLOSS_PRICE      5
+#define     _GET_SHORT_STOPLOSS_PRICE     6
+#define     _GET_LONG_TAKEPROFIT_PRICE    7
+#define     _GET_SHORT_TAKEPROFIT_PRICE   8
+#define     _GET_LOTS                     9
+#define     _GET_TRAILED_STOPLOSS_PRICE   10
+#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
+#define     _GET_TRADED_TIMEFRAME         12
+*/
+      case _OPEN_LONG:
+      {
+//         _PRICE = PRICE_LOW;
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+         T2_MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         T2_MACDSignal = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+//         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < 0)
+//         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+         if(MACDHistogram1 > MACDHistogram2)
+         if(MACDSignal1 < MACDSignal2)
+         if(MACDHistogram1 <= MACDSignal1)
+         if(MACDHistogram1 < 0)
+         if(MACDSignal1 < 0)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+//         if(MAFast1 > MASlow1)
+
+//         if(Ask > MALong)
+//         if(MAFast > MALong)
+//         if(MALong1 < MALong)
+         if(MALong2 < MALong1)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         _PRICE = PRICE_HIGH;
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+         T2_MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         T2_MACDSignal = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+         if(MACDHistogram1 < MACDHistogram2)
+         if(MACDSignal1 > MACDSignal2)
+         if(MACDHistogram1 >= MACDSignal1)
+         if(MACDHistogram1 > 0)
+         if(MACDSignal1 > 0)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+//         if(MAFast1 < MASlow1)
+
+//         if(Bid < MALong)
+//         if(MAFast < MALong)
+//         if(MALong1 > MALong)
+         if(MALong2 > MALong1)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+            result = 1;
+                  
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+         break;
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+//         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+//         if(MACDHistogram1 >= MACDSignal1)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+
+//         if(Bid < MALong)
+//         if(MAFast < MALong)
+//         if(MALong1 > MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) > iHigh(_SYMBOL, _TIMEFRAME, 0))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(Bid < iLow(_SYMBOL, _TIMEFRAME, 1))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+         break;
+
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < 0)
+//         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 <= MACDSignal1)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+
+//         if(Ask > MALong)
+//         if(MAFast > MALong)
+//         if(MALong1 < MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > iLow(_SYMBOL, _TIMEFRAME, 0))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(Ask > iHigh(_SYMBOL, _TIMEFRAME, 1))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
+//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result > Ask - 10*Point)
+            result = Ask - 10*Point;
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
+//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result < Bid + 10*Point)
+            result = Bid + 10*Point;
+         
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+//         break;
+
+         double beq = 0;
+         
+/*
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq > Bid - 10*Point)
+                     beq = Bid - 10*Point;
+                  
+                  if(beq <= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+               else
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq < Ask + 10*Point)
+                     beq = Ask + 10*Point;
+                     
+                  if(beq >= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+            }
+         }
+*/
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+//            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
+                  
+                  if(beq > result)
+                     result = beq;
+                  
+                  if(result > Bid - 10*Point)
+                     result = Bid - 10*Point;
+                  
+                  if(result <= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+               else
+               {
+//                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
+                  
+                  if(beq > result)
+                     result = beq;
+
+                  if(result < Ask + 10*Point)
+                     result = Ask + 10*Point;
+                     
+                  if(result >= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+            }
+         }
+         
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = Bid + MathAbs(Bid - OrderStopLoss());
+               }
+               else
+               {
+                  result = Ask - MathAbs(Ask - OrderStopLoss());
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(result > Bid)
+                     result = Bid;
+                  
+                  if(result <= Bid)
+                     result = 0;
+               }
+               else
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(result < Ask)
+                     result = Ask;
+                     
+                  if(result >= Ask)
+                     result = 0;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_012(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+//   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+   int      _TIMEFRAME     = _TIMEFRAME;
+   int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
+   int      _SLOWEMA       = 26;
+   int      _FASTEMA       = 12;
+   int      _MASIGNAL      = 9;
+   int      _MAMETHOD      = MODE_EMA;
+   int      _SLOWMA        = 20;
+   int      _FASTMA        = 10;
+   int      _LONGMA        = LONGMA;
+   int      _SHIFT         = 0;
+   int      _PRICE         = PRICE_OPEN;
+
+   double   result         = 0;
+   
+   double   MAFast;
+   double   MASlow;
+   double   MALong;
+   double   MACDHistogram;
+   double   MACDSignal;
+   double   MAFast1;
+   double   MASlow1;
+   double   MALong1;
+   double   MACDHistogram1;
+   double   MACDSignal1;
+   double   MAFast2;
+   double   MASlow2;
+   double   MALong2;
+   double   MACDHistogram2;
+   double   MACDSignal2;
+   double   T2_MACDHistogram;
+   double   T2_MACDSignal;
+   double   UpperFractalHL;
+   double   LowerFractalHL;
+
+   int      i;
+
+   switch(COMMAND)
+   {
+/*
+#define     _CLOSE_LONG                   1
+#define     _CLOSE_SHORT                  2
+#define     _OPEN_LONG                    3
+#define     _OPEN_SHORT                   4
+#define     _GET_LONG_STOPLOSS_PRICE      5
+#define     _GET_SHORT_STOPLOSS_PRICE     6
+#define     _GET_LONG_TAKEPROFIT_PRICE    7
+#define     _GET_SHORT_TAKEPROFIT_PRICE   8
+#define     _GET_LOTS                     9
+#define     _GET_TRAILED_STOPLOSS_PRICE   10
+#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
+#define     _GET_TRADED_TIMEFRAME         12
+*/
+      case _OPEN_LONG:
+      {
+//         _PRICE = PRICE_LOW;
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+         T2_MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         T2_MACDSignal = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         UpperFractalHL = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+         LowerFractalHL = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+
+//         if(MACDHistogram < MACDSignal)
+         if(MACDHistogram > MACDSignal)
+         if(MACDHistogram < 0)
+//         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 > MACDHistogram2)
+//         if(MACDSignal1 < MACDSignal2)
+//         if(MACDHistogram1 <= MACDSignal1)
+//         if(MACDHistogram1 < 0)
+//         if(MACDSignal1 < 0)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+//         if(MAFast1 > MASlow1)
+
+         if(Ask > MALong)
+//         if(MAFast > MALong)
+//         if(MALong1 < MALong)
+//         if(MALong2 < MALong1)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+
+         if(Ask > UpperFractalHL - 10*Point && Low[0] < UpperFractalHL)
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         _PRICE = PRICE_HIGH;
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+         T2_MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         T2_MACDSignal = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         UpperFractalHL = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+         LowerFractalHL = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+
+//         if(MACDHistogram > MACDSignal)
+         if(MACDHistogram < MACDSignal)
+         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+//       if(MACDHistogram1 < MACDHistogram2)
+//       if(MACDSignal1 > MACDSignal2)
+//       if(MACDHistogram1 >= MACDSignal1)
+//       if(MACDHistogram1 > 0)
+//       if(MACDSignal1 > 0)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+//         if(MAFast1 < MASlow1)
+
+         if(Bid < MALong)
+//         if(MAFast < MALong)
+//         if(MALong1 > MALong)
+//        if(MALong2 > MALong1)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+
+         if(Bid < LowerFractalHL + 10*Point && High[0] > LowerFractalHL)
+            result = 1;
+                  
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+         break;
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+//         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+//         if(MACDHistogram1 >= MACDSignal1)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+
+//         if(Bid < MALong)
+//         if(MAFast < MALong)
+//         if(MALong1 > MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) > iHigh(_SYMBOL, _TIMEFRAME, 0))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(Bid < iLow(_SYMBOL, _TIMEFRAME, 1))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+         break;
+
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < 0)
+//         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 <= MACDSignal1)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+
+//         if(Ask > MALong)
+//         if(MAFast > MALong)
+//         if(MALong1 < MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > iLow(_SYMBOL, _TIMEFRAME, 0))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(Ask > iHigh(_SYMBOL, _TIMEFRAME, 1))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
+//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result > Ask - 10*Point)
+            result = Ask - 10*Point;
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
+//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result < Bid + 10*Point)
+            result = Bid + 10*Point;
+         
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+//         break;
+
+         double beq = 0;
+         
+/*
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq > Bid - 10*Point)
+                     beq = Bid - 10*Point;
+                  
+                  if(beq <= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+               else
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq < Ask + 10*Point)
+                     beq = Ask + 10*Point;
+                     
+                  if(beq >= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+            }
+         }
+*/
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
+                  
+                  if(beq > result)
+                     result = beq;
+                  
+                  if(result > Bid - 15*Point)
+                     result = Bid - 15*Point;
+                  
+                  if(result <= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+               else
+               {
+//                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
+                  
+                  if(beq > result)
+                     result = beq;
+
+                  if(result < Ask + 15*Point)
+                     result = Ask + 15*Point;
+                     
+                  if(result >= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+            }
+         }
+         
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = Bid + MathAbs(Bid - OrderStopLoss());
+               }
+               else
+               {
+                  result = Ask - MathAbs(Ask - OrderStopLoss());
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(result > Bid)
+                     result = Bid;
+                  
+                  if(result <= Bid)
+                     result = 0;
+               }
+               else
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(result < Ask)
+                     result = Ask;
+                     
+                  if(result >= Ask)
+                     result = 0;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_013(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+//   int      _TIMEFRAME     = _TIMEFRAME;
+   int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
+   int      _SLOWEMA       = 26;
+   int      _FASTEMA       = 12;
+   int      _MASIGNAL      = 9;
+   int      _MAMETHOD      = MODE_EMA;
+   int      _SLOWMA        = 20;
+   int      _FASTMA        = 10;
+   int      _LONGMA        = LONGMA;
+   int      _SHIFT         = 0;
+   int      _PRICE         = PRICE_OPEN;
+
+   double   result         = 0;
+   
+   double   MAFast;
+   double   MASlow;
+   double   MALong;
+   double   MACDHistogram;
+   double   MACDSignal;
+   double   MAFast1;
+   double   MASlow1;
+   double   MALong1;
+   double   MACDHistogram1;
+   double   MACDSignal1;
+   double   MAFast2;
+   double   MASlow2;
+   double   MALong2;
+   double   MACDHistogram2;
+   double   MACDSignal2;
+   double   T2_MACDHistogram;
+   double   T2_MACDSignal;
+   double   UpperFractalHL;
+   double   LowerFractalHL;
+
+   int      i;
+
+   switch(COMMAND)
+   {
+/*
+#define     _CLOSE_LONG                   1
+#define     _CLOSE_SHORT                  2
+#define     _OPEN_LONG                    3
+#define     _OPEN_SHORT                   4
+#define     _GET_LONG_STOPLOSS_PRICE      5
+#define     _GET_SHORT_STOPLOSS_PRICE     6
+#define     _GET_LONG_TAKEPROFIT_PRICE    7
+#define     _GET_SHORT_TAKEPROFIT_PRICE   8
+#define     _GET_LOTS                     9
+#define     _GET_TRAILED_STOPLOSS_PRICE   10
+#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
+#define     _GET_TRADED_TIMEFRAME         12
+*/
+      case _OPEN_LONG:
+      {
+//         _PRICE = PRICE_LOW;
+         if(!OpenNewBar())
+            return(0);
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+         T2_MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         T2_MACDSignal = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         UpperFractalHL = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+         LowerFractalHL = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+
+//         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < 0)
+         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 > MACDHistogram2)
+//         if(MACDSignal1 < MACDSignal2)
+//         if(MACDHistogram1 <= MACDSignal1)
+//         if(MACDHistogram1 < 0)
+//         if(MACDSignal1 < 0)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+//         if(MAFast1 > MASlow1)
+
+//         if(Ask > MALong)
+//         if(MAFast > MALong)
+//         if(MALong1 < MALong)
+//         if(MALong2 < MALong1)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+
+//         if(Ask > UpperFractalHL - 10*Point && Low[0] < UpperFractalHL)
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         _PRICE = PRICE_HIGH;
+         if(!OpenNewBar())
+            return(0);
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+         T2_MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         T2_MACDSignal = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         UpperFractalHL = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+         LowerFractalHL = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > 0)
+         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+//       if(MACDHistogram1 < MACDHistogram2)
+//       if(MACDSignal1 > MACDSignal2)
+//       if(MACDHistogram1 >= MACDSignal1)
+//       if(MACDHistogram1 > 0)
+//       if(MACDSignal1 > 0)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+//         if(MAFast1 < MASlow1)
+
+//         if(Bid < MALong)
+//         if(MAFast < MALong)
+//         if(MALong1 > MALong)
+//        if(MALong2 > MALong1)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+
+//         if(Bid < LowerFractalHL + 10*Point && High[0] > LowerFractalHL)
+            result = 1;
+                  
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+//         break;
+         if(!OpenNewBar())
+            return(0);
+         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+//         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > 0)
+         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+//         if(MACDHistogram1 >= MACDSignal1)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+
+//         if(Bid < MALong)
+//         if(MAFast < MALong)
+//         if(MALong1 > MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) > iHigh(_SYMBOL, _TIMEFRAME, 0))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(Bid < iLow(_SYMBOL, _TIMEFRAME, 1))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+//         break;
+         if(!OpenNewBar())
+            return(0);
+
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < 0)
+         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 <= MACDSignal1)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+
+//         if(Ask > MALong)
+//         if(MAFast > MALong)
+//         if(MALong1 < MALong)
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > iLow(_SYMBOL, _TIMEFRAME, 0))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(Ask > iHigh(_SYMBOL, _TIMEFRAME, 1))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
+//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result > Ask - 10*Point)
+            result = Ask - 10*Point;
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
+//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result < Bid + 10*Point)
+            result = Bid + 10*Point;
+         
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+         break;
+
+         double beq = 0;
+         
+/*
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq > Bid - 10*Point)
+                     beq = Bid - 10*Point;
+                  
+                  if(beq <= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+               else
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq < Ask + 10*Point)
+                     beq = Ask + 10*Point;
+                     
+                  if(beq >= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+            }
+         }
+*/
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
+                  
+                  if(beq > result)
+                     result = beq;
+                  
+                  if(result > Bid - 15*Point)
+                     result = Bid - 15*Point;
+                  
+                  if(result <= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+               else
+               {
+//                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
+                  
+                  if(beq > result)
+                     result = beq;
+
+                  if(result < Ask + 15*Point)
+                     result = Ask + 15*Point;
+                     
+                  if(result >= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+            }
+         }
+         
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = Bid + MathAbs(Bid - OrderStopLoss());
+               }
+               else
+               {
+                  result = Ask - MathAbs(Ask - OrderStopLoss());
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(result > Bid)
+                     result = Bid;
+                  
+                  if(result <= Bid)
+                     result = 0;
+               }
+               else
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(result < Ask)
+                     result = Ask;
+                     
+                  if(result >= Ask)
+                     result = 0;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_014(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+//   int      _TIMEFRAME_2   = HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME)));
+   int      _TIMEFRAME_2   = _TIMEFRAME;
+   int      _SHIFT         = 0;
+   int      _PRICE         = PRICE_OPEN;
+
+   double   result         = 0;
+   
+   double   UpperFractal1;
+   double   LowerFractal1;
+   datetime UpperFractalTime1;
+   datetime LowerFractalTime1;
+   int      UpperFractalShift1;
+   int      LowerFractalShift1;
+   double   UpperFractal2;
+   double   LowerFractal2;
+   datetime UpperFractalTime2;
+   datetime LowerFractalTime2;
+   int      UpperFractalShift2;
+   int      LowerFractalShift2;
+
+   int      i;
+
+   switch(COMMAND)
+   {
+/*
+#define     _CLOSE_LONG                   1
+#define     _CLOSE_SHORT                  2
+#define     _OPEN_LONG                    3
+#define     _OPEN_SHORT                   4
+#define     _GET_LONG_STOPLOSS_PRICE      5
+#define     _GET_SHORT_STOPLOSS_PRICE     6
+#define     _GET_LONG_TAKEPROFIT_PRICE    7
+#define     _GET_SHORT_TAKEPROFIT_PRICE   8
+#define     _GET_LOTS                     9
+#define     _GET_TRAILED_STOPLOSS_PRICE   10
+#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
+#define     _GET_TRADED_TIMEFRAME         12
+*/
+      case _OPEN_LONG:
+      {
+//         if(!OpenNewBar())
+//            return(0);
+         
+/*
+         UpperFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+         UpperFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME, true);
+         UpperFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true);
+         UpperFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME, true);
+
+         UpperFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime1);
+         UpperFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime2);
+*/
+         UpperFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+         UpperFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME_2, true);
+         UpperFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+         UpperFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME_2, true);
+
+         UpperFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime1);
+         UpperFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime2);
+
+         Print(Ask, " - ", UpperFractal2 - (UpperFractal2 - UpperFractal1) * (UpperFractalShift2 / (UpperFractalShift2 - UpperFractalShift1)));
+         if(Ask > UpperFractal2 - (UpperFractal2 - UpperFractal1) * (UpperFractalShift2 / (UpperFractalShift2 - UpperFractalShift1)))
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         if(!OpenNewBar())
+//            return(0);
+
+/*         
+         LowerFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+         LowerFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME, false);
+         LowerFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false);
+         LowerFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME, false);
+
+         LowerFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime1);
+         LowerFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime2);
+*/
+         LowerFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, false);
+         LowerFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME_2, false);
+         LowerFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME_2, false);
+         LowerFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME_2, false);
+
+         LowerFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime1);
+         LowerFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime2);
+
+         Print(Bid, " - ", LowerFractal2 - (LowerFractal2 - LowerFractal1) * (LowerFractalShift2 / (LowerFractalShift2 - LowerFractalShift1)));
+         if(Bid < LowerFractal2 - (LowerFractal2 - LowerFractal1) * (LowerFractalShift2 / (LowerFractalShift2 - LowerFractalShift1)))
+            result = 1;
+                  
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) > iHigh(_SYMBOL, _TIMEFRAME, 0))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+
+         if(!OpenNewBar())
+            return(0);
+         
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(Bid < iLow(_SYMBOL, _TIMEFRAME, 1))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > iLow(_SYMBOL, _TIMEFRAME, 0))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(!OpenNewBar())
+            return(0);
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(Ask > iHigh(_SYMBOL, _TIMEFRAME, 1))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result > Ask - 10*Point)
+            result = Ask - 10*Point;
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+
+         if(result < Bid + 10*Point)
+            result = Bid + 10*Point;
+         
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+//         break;
+
+         double beq = 0;
+         
+/*
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq > Bid - 10*Point)
+                     beq = Bid - 10*Point;
+                  
+                  if(beq <= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+               else
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
+                     beq = OrderOpenPrice();
+                  
+                  if(beq < Ask + 10*Point)
+                     beq = Ask + 10*Point;
+                     
+                  if(beq >= OrderStopLoss())
+                     beq = OrderStopLoss();
+               }
+            }
+         }
+*/
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+//            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(beq > result)
+                     result = beq;
+                  
+                  if(result > Bid - 10*Point)
+                     result = Bid - 10*Point;
+                  
+                  if(result <= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+               else
+               {
+//                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(beq > result)
+                     result = beq;
+
+                  if(result < Ask + 10*Point)
+                     result = Ask + 10*Point;
+                     
+                  if(result >= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+            }
+         }
+         
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = Bid + MathAbs(Bid - OrderStopLoss());
+               }
+               else
+               {
+                  result = Ask - MathAbs(Ask - OrderStopLoss());
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(result > Bid)
+                     result = Bid;
+                  
+                  if(result <= Bid)
+                     result = 0;
+               }
+               else
+               {
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(result < Ask)
+                     result = Ask;
+                     
+                  if(result >= Ask)
+                     result = 0;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+         break;
+      }
+   }
+      
+   return(result);
+}
+
