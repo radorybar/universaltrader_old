@@ -4913,13 +4913,42 @@ double Strategy_014(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
-//   int      _TIMEFRAME_2   = HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME)));
    int      _TIMEFRAME_2   = _TIMEFRAME;
+//   int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
+//   int      _TIMEFRAME_2   = HigherTimeframe(HigherTimeframe(_TIMEFRAME));
+//   int      _TIMEFRAME_2   = HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME)));
+   int      _SLOWEMA       = 26;
+   int      _FASTEMA       = 12;
+   int      _MASIGNAL      = 9;
+   int      _MAMETHOD      = MODE_EMA;
+   int      _SLOWMA        = 20;
+   int      _FASTMA        = 10;
+   int      _LONGMA        = LONGMA;
    int      _SHIFT         = 0;
    int      _PRICE         = PRICE_OPEN;
-
+   int      _MAXSTOPLOSS   = 0;
+   int      _MAX_FRACTAL_DISTANCE = 1000;
+      
    double   result         = 0;
    
+   double   MAFast;
+   double   MASlow;
+   double   MALong;
+   double   MACDHistogram;
+   double   MACDSignal;
+   double   MAFast1;
+   double   MASlow1;
+   double   MALong1;
+   double   MACDHistogram1;
+   double   MACDSignal1;
+   double   MAFast2;
+   double   MASlow2;
+   double   MALong2;
+   double   MACDHistogram2;
+   double   MACDSignal2;
+   double   T2_MACDHistogram;
+   double   T2_MACDSignal;
+
    double   UpperFractal1;
    double   LowerFractal1;
    datetime UpperFractalTime1;
@@ -4932,7 +4961,8 @@ double Strategy_014(int COMMAND)
    datetime LowerFractalTime2;
    int      UpperFractalShift2;
    int      LowerFractalShift2;
-
+   double   EdgePrice;
+   
    int      i;
 
    switch(COMMAND)
@@ -4954,27 +4984,75 @@ double Strategy_014(int COMMAND)
       case _OPEN_LONG:
       {
 //         if(!OpenNewBar())
-//            return(0);
-         
+//            break;
+
+/*         
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+*/
 /*
          UpperFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
          UpperFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME, true);
          UpperFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true);
          UpperFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME, true);
-
-         UpperFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime1);
-         UpperFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime2);
 */
+
          UpperFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
          UpperFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME_2, true);
          UpperFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME_2, true);
          UpperFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME_2, true);
+         LowerFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, false);
+         LowerFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME_2, false);
+         LowerFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME_2, false);
+         LowerFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME_2, false);
 
          UpperFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime1);
          UpperFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime2);
+         LowerFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime1);
+         LowerFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime2);
+         
+         EdgePrice = UpperFractal2 - (UpperFractal2 - UpperFractal1) * (UpperFractalShift2 / (UpperFractalShift2 - UpperFractalShift1));
 
-         Print(Ask, " - ", UpperFractal2 - (UpperFractal2 - UpperFractal1) * (UpperFractalShift2 / (UpperFractalShift2 - UpperFractalShift1)));
-         if(Ask > UpperFractal2 - (UpperFractal2 - UpperFractal1) * (UpperFractalShift2 / (UpperFractalShift2 - UpperFractalShift1)))
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < 0)
+//         if(MACDHistogram > 0)
+//         if(MACDSignal < 0)
+
+//         if(MACDHistogram1 <= MACDSignal1)
+
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 > 0)
+//         if(MACDHistogram2 < 0)
+//         if(MACDSignal2 < 0)
+//         if(MACDSignal2 > 0)
+
+//         if(MAFast1 < MASlow1 && MAFast > MASlow)
+//         if(MAFast > MASlow)
+
+//         if(Ask > MALong)
+//         if(MAFast > MALong)
+//         if(MALong1 < MALong)
+
+//         Print(Ask, " - ", UpperFractal2 - (UpperFractal2 - UpperFractal1) * (UpperFractalShift2 / (UpperFractalShift2 - UpperFractalShift1)));
+         if(Ask > EdgePrice)
+         if(Ask < LowerFractal1 + _MAX_FRACTAL_DISTANCE*Point)
+         if(UpperFractal2 >= UpperFractal1)
             result = 1;
                   
          break;
@@ -4982,35 +5060,106 @@ double Strategy_014(int COMMAND)
       case _OPEN_SHORT:
       {
 //         if(!OpenNewBar())
-//            return(0);
+//            break;
+/*
+         MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MASlow = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MALong = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT);
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
+         MAFast1 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MASlow1 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MALong1 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 1);
+         MACDHistogram1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 1);
+         MACDSignal1 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 1);
+
+         MAFast2 = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MASlow2 = iMA(_SYMBOL, _TIMEFRAME, _SLOWMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MALong2 = iMA(_SYMBOL, _TIMEFRAME, _LONGMA, 0, _MAMETHOD, _PRICE, _SHIFT + 2);
+         MACDHistogram2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT + 2);
+         MACDSignal2 = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT + 2);
+
+         T2_MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         T2_MACDSignal = iMACD(_SYMBOL, _TIMEFRAME_2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+*/
 /*         
          LowerFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
          LowerFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME, false);
          LowerFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false);
          LowerFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME, false);
-
-         LowerFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime1);
-         LowerFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime2);
 */
+         UpperFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+         UpperFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME_2, true);
+         UpperFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME_2, true);
+         UpperFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME_2, true);
          LowerFractal1 = getLastFractalValue(_SYMBOL, _TIMEFRAME_2, false);
          LowerFractalTime1 = getLastFractalTime(_SYMBOL, _TIMEFRAME_2, false);
          LowerFractal2 = getPreviousFractalValue(_SYMBOL, _TIMEFRAME_2, false);
          LowerFractalTime2 = getPreviousFractalTime(_SYMBOL, _TIMEFRAME_2, false);
 
+         UpperFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime1);
+         UpperFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, UpperFractalTime2);
          LowerFractalShift1 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime1);
          LowerFractalShift2 = iBarShift(_SYMBOL, _TIMEFRAME, LowerFractalTime2);
 
-         Print(Bid, " - ", LowerFractal2 - (LowerFractal2 - LowerFractal1) * (LowerFractalShift2 / (LowerFractalShift2 - LowerFractalShift1)));
-         if(Bid < LowerFractal2 - (LowerFractal2 - LowerFractal1) * (LowerFractalShift2 / (LowerFractalShift2 - LowerFractalShift1)))
+         EdgePrice = LowerFractal2 - (LowerFractal2 - LowerFractal1) * (LowerFractalShift2 / (LowerFractalShift2 - LowerFractalShift1));
+         
+//         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
+//         if(MACDSignal > 0)
+
+//       if(MACDHistogram1 < MACDHistogram2)
+//       if(MACDSignal1 > MACDSignal2)
+//       if(MACDHistogram1 >= MACDSignal1)
+//       if(MACDHistogram1 > 0)
+//       if(MACDSignal1 > 0)
+
+//         if(MACDHistogram2 > MACDSignal2)
+//         if(MACDHistogram2 < MACDSignal2)
+//         if(MACDHistogram2 < 0)
+//         if(MACDHistogram2 > 0)
+//         if(MACDSignal2 > 0)
+//         if(MACDSignal2 < 0)
+
+//         if(MAFast1 > MASlow1 && MAFast < MASlow)
+//         if(MAFast < MASlow)
+//         if(MAFast1 < MASlow1)
+
+//         if(Bid < MALong)
+//         if(MAFast < MALong)
+//         if(MALong1 > MALong)
+//        if(MALong2 > MALong1)
+
+//         Print(Bid, " - ", LowerFractal2 - (LowerFractal2 - LowerFractal1) * (LowerFractalShift2 / (LowerFractalShift2 - LowerFractalShift1)));
+         if(Bid < EdgePrice)
+         if(Bid > UpperFractal1 - _MAX_FRACTAL_DISTANCE*Point)
+         if(LowerFractal2 <= LowerFractal1)
             result = 1;
                   
          break;
       }
       case _CLOSE_LONG:
       {
+         if(!OpenNewBar())
+            break;
+
          break;
 
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+
+         break;
+         
          if(OrdersTotal() == 1)
          {
             OrderSelect(0, SELECT_BY_POS);
@@ -5029,21 +5178,6 @@ double Strategy_014(int COMMAND)
 
          break;
 
-         if(!OpenNewBar())
-            return(0);
-         
-//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
-//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
-//            result = 1;
-
-         break;
-         
          if(OrdersTotal() == 1)
          {
             OrderSelect(0, SELECT_BY_POS);
@@ -5080,8 +5214,23 @@ double Strategy_014(int COMMAND)
       }
       case _CLOSE_SHORT:
       {
+         if(!OpenNewBar())
+            break;
+
          break;
 
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+            result = 1;
+
+         break;
+         
          if(OrdersTotal() == 1)
          {
             OrderSelect(0, SELECT_BY_POS);
@@ -5097,21 +5246,6 @@ double Strategy_014(int COMMAND)
                }
             }
          }
-
-         break;
-         
-         if(!OpenNewBar())
-            return(0);
-
-//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
-//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
-//            result = 1;
 
          break;
          
@@ -5156,6 +5290,10 @@ double Strategy_014(int COMMAND)
          result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
 //         result = iLow(_SYMBOL, _TIMEFRAME, 1);
 
+         if(_MAXSTOPLOSS > 0)
+            if(result < Ask - _MAXSTOPLOSS*Point)
+               result = Ask - _MAXSTOPLOSS*Point;
+            
          if(result > Ask - 10*Point)
             result = Ask - 10*Point;
 
@@ -5167,6 +5305,10 @@ double Strategy_014(int COMMAND)
 
          result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
 //         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+
+         if(_MAXSTOPLOSS > 0)
+            if(result > Bid + _MAXSTOPLOSS*Point)
+               result = Bid + _MAXSTOPLOSS*Point;
 
          if(result < Bid + 10*Point)
             result = Bid + 10*Point;
@@ -5183,11 +5325,13 @@ double Strategy_014(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
+         if(!OpenNewBar())
+            break;
+
 //         break;
 
          double beq = 0;
-         
-/*
+
          if(OrdersTotal() == 1)
          {
             OrderSelect(0, SELECT_BY_POS);
@@ -5202,9 +5346,6 @@ double Strategy_014(int COMMAND)
                   
                   if(beq > Bid - 10*Point)
                      beq = Bid - 10*Point;
-                  
-                  if(beq <= OrderStopLoss())
-                     beq = OrderStopLoss();
                }
                else
                {
@@ -5213,14 +5354,10 @@ double Strategy_014(int COMMAND)
                   
                   if(beq < Ask + 10*Point)
                      beq = Ask + 10*Point;
-                     
-                  if(beq >= OrderStopLoss())
-                     beq = OrderStopLoss();
                }
             }
          }
-*/
-         
+
          if(OrdersTotal() == 1)
          {
             OrderSelect(0, SELECT_BY_POS);
@@ -5247,7 +5384,7 @@ double Strategy_014(int COMMAND)
 //                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
                   
-                  if(beq > result)
+                  if(beq < result)
                      result = beq;
 
                   if(result < Ask + 10*Point)
