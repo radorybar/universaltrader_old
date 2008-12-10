@@ -11,7 +11,7 @@
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
-int   _STRATEGY_NUMBER              = 14;
+int   _STRATEGY_NUMBER              = 16;
 
 // 1 - PERIOD_M1
 // 2 - PERIOD_M5
@@ -26,7 +26,7 @@ int   _STRATEGY_NUMBER              = 14;
 // _STRATEGY_TIMEFRAME_CHOICE
 //extern string poznamka1 = "0 - vyber timeframe podla dropdown menu - premenna _STRATEGY_TIMEFRAME sa ignoruje";
 //extern string poznamka2 = "1 - vyber timeframe podla kodu timeframe 1 - 9";
-int   _STRATEGY_TIMEFRAME_CHOICE    = 0;
+extern int   _STRATEGY_TIMEFRAME_CHOICE    = 1;
 extern int   _STRATEGY_TIMEFRAME           = 1;
 
 //string poznamka1 = "0 - vyber timeframe podla dropdown menu - premenna _STRATEGY_TIMEFRAME sa ignoruje";
@@ -55,10 +55,10 @@ extern int   _STRATEGY_TIMEFRAME           = 1;
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
+#define     _OPEN_LONG                    1
+#define     _OPEN_SHORT                   2
+#define     _CLOSE_LONG                   3
+#define     _CLOSE_SHORT                  4
 #define     _GET_LONG_STOPLOSS_PRICE      5
 #define     _GET_SHORT_STOPLOSS_PRICE     6
 #define     _GET_LONG_TAKEPROFIT_PRICE    7
@@ -67,6 +67,13 @@ extern int   _STRATEGY_TIMEFRAME           = 1;
 #define     _GET_TRAILED_STOPLOSS_PRICE   10
 #define     _GET_TRAILED_TAKEPROFIT_PRICE 11
 #define     _GET_TRADED_TIMEFRAME         12
+#define     _OPEN_PENDING_BUY_STOP        13
+#define     _OPEN_PENDING_SELL_STOP       14
+#define     _OPEN_PENDING_BUY_LIMIT       15
+#define     _OPEN_PENDING_SELL_LIMIT      16
+#define     _GET_PENDING_BUY_STOP_PRICE   17
+#define     _GET_PENDING_SELL_STOP_PRICE  18
+#define     _GET_PENDING_ORDER_EXPIRATION 19
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
@@ -93,8 +100,6 @@ int start()
    
    if(LastBarTraded())
       return(0);
-//   if(!OpenNewBar())
-//      return(0);
 
    if(OrdersTotal() > 0)
    {
@@ -111,8 +116,6 @@ int start()
    }
    
 
-//   if(!OpenNewBar())
-//      return(0);
    if(!TradeAllowed(1))
       return(0);
 
@@ -121,6 +124,10 @@ int start()
    if(Strategy(_STRATEGY_NUMBER, _OPEN_SHORT) == 1)
       OpenPosition(true, Strategy(_STRATEGY_NUMBER, _GET_LOTS), Strategy(_STRATEGY_NUMBER, _GET_SHORT_STOPLOSS_PRICE), Strategy(_STRATEGY_NUMBER, _GET_SHORT_TAKEPROFIT_PRICE), 3, _MAGICNUMBER);
 
+   if(Strategy(_STRATEGY_NUMBER, _OPEN_PENDING_BUY_STOP) == 1)
+      OpenPendingPosition(false, Strategy(_STRATEGY_NUMBER, _GET_LOTS), Strategy(_STRATEGY_NUMBER, _GET_PENDING_BUY_STOP_PRICE), Strategy(_STRATEGY_NUMBER, _GET_LONG_STOPLOSS_PRICE), Strategy(_STRATEGY_NUMBER, _GET_LONG_TAKEPROFIT_PRICE), 3, _MAGICNUMBER, Strategy(_STRATEGY_NUMBER, _GET_PENDING_ORDER_EXPIRATION));
+   if(Strategy(_STRATEGY_NUMBER, _OPEN_PENDING_SELL_STOP) == 1)
+      OpenPendingPosition(true, Strategy(_STRATEGY_NUMBER, _GET_LOTS), Strategy(_STRATEGY_NUMBER, _GET_PENDING_SELL_STOP_PRICE), Strategy(_STRATEGY_NUMBER, _GET_SHORT_STOPLOSS_PRICE), Strategy(_STRATEGY_NUMBER, _GET_SHORT_TAKEPROFIT_PRICE), 3, _MAGICNUMBER, Strategy(_STRATEGY_NUMBER, _GET_PENDING_ORDER_EXPIRATION));
 
    return(0);
 }
@@ -218,7 +225,7 @@ double GetLots(int MM_STRATEGY, int AMOUNT)
 //------------------------------------------------------------------
 
 //------------------------------------------------------------------------------------
-// Opens position according to arguments (-1 short || 1 long, amount of Lots to trade 
+// Opens position according to arguments (short || long, amount of Lots to trade 
 //------------------------------------------------------------------------------------
 void OpenPosition(bool SHORTLONG, double LOTS, double STOPLOSS, double TAKEPROFIT, int SLIPPAGE, int MAGICNUMBER)
 {
@@ -229,6 +236,22 @@ void OpenPosition(bool SHORTLONG, double LOTS, double STOPLOSS, double TAKEPROFI
    else
    {
       OrderSend(Symbol(), OP_BUY, LOTS, Ask, SLIPPAGE, STOPLOSS, TAKEPROFIT, TimeToStr(Time[0]), MAGICNUMBER, 0, Blue);
+   }
+   
+   LastBarTraded = Time[0];
+}
+//------------------------------------------------------------------------------------
+// Opens pending position according to arguments (sell stop || buy stop, amount of Lots to trade 
+//------------------------------------------------------------------------------------
+void OpenPendingPosition(bool SHORTLONG, double LOTS, double OPENPRICE, double STOPLOSS, double TAKEPROFIT, int SLIPPAGE, int MAGICNUMBER, datetime EXPIRATION)
+{
+   if(SHORTLONG)
+   {
+      OrderSend(Symbol(), OP_SELLSTOP, LOTS, OPENPRICE, SLIPPAGE, STOPLOSS, TAKEPROFIT, NULL, MAGICNUMBER, EXPIRATION, Red);
+   }
+   else
+   {
+      OrderSend(Symbol(), OP_BUYSTOP, LOTS, OPENPRICE, SLIPPAGE, STOPLOSS, TAKEPROFIT, NULL, MAGICNUMBER, EXPIRATION, Blue);
    }
    
    LastBarTraded = Time[0];
@@ -655,6 +678,16 @@ double Strategy(int STRATEGY, int COMMAND)
       {
          return(Strategy_014(COMMAND));
       }
+// denne sviecky - hladanie vnutornej sviecky - nerozhodnost trhu - umietnenie pending order nad/pod high/low vcerajsej sviecky a cakanie na prieraz
+      case 15:
+      {
+         return(Strategy_015(COMMAND));
+      }
+// modifikacia predosleho systemu - nie pending orders ale market, aby bolo mozne pouzit aj nizsie timeframes
+      case 16:
+      {
+         return(Strategy_016(COMMAND));
+      }
    }
 
    return(0);
@@ -680,20 +713,6 @@ double Strategy_001(int COMMAND)
    
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
@@ -848,20 +867,6 @@ double Strategy_002(int COMMAND)
    
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
@@ -1025,20 +1030,6 @@ double Strategy_003(int COMMAND)
    
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
@@ -1202,20 +1193,6 @@ double Strategy_004(int COMMAND)
       
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
@@ -1304,20 +1281,6 @@ double Strategy_005(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MACDHistogram = iMACD(_SYMBOL, TIMEFRAME2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
@@ -1503,20 +1466,6 @@ double Strategy_006(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -1713,20 +1662,6 @@ double Strategy_007(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -1936,20 +1871,6 @@ double Strategy_008(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -2260,20 +2181,6 @@ double Strategy_009(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -2642,20 +2549,6 @@ double Strategy_010(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -2988,7 +2881,7 @@ double Strategy_010(int COMMAND)
       {
 //         break;
 
-         double beq = 0;
+         double breakeven = 0;
          
 /*
          if(OrdersTotal() == 1)
@@ -3001,24 +2894,24 @@ double Strategy_010(int COMMAND)
                if(OrderType() == OP_BUY)
                {
                   if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq > Bid - 10*Point)
-                     beq = Bid - 10*Point;
+                  if(breakeven > Bid - 10*Point)
+                     breakeven = Bid - 10*Point;
                   
-                  if(beq <= OrderStopLoss())
-                     beq = OrderStopLoss();
+                  if(breakeven <= OrderStopLoss())
+                     breakeven = OrderStopLoss();
                }
                else
                {
                   if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq < Ask + 10*Point)
-                     beq = Ask + 10*Point;
+                  if(breakeven < Ask + 10*Point)
+                     breakeven = Ask + 10*Point;
                      
-                  if(beq >= OrderStopLoss())
-                     beq = OrderStopLoss();
+                  if(breakeven >= OrderStopLoss())
+                     breakeven = OrderStopLoss();
                }
             }
          }
@@ -3036,8 +2929,8 @@ double Strategy_010(int COMMAND)
 //                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
                   
                   if(result > Bid - 10*Point)
                      result = Bid - 10*Point;
@@ -3050,8 +2943,8 @@ double Strategy_010(int COMMAND)
 //                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
 
                   if(result < Ask + 10*Point)
                      result = Ask + 10*Point;
@@ -3176,20 +3069,6 @@ double Strategy_011(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
 //         _PRICE = PRICE_LOW;
@@ -3569,7 +3448,7 @@ double Strategy_011(int COMMAND)
       {
 //         break;
 
-         double beq = 0;
+         double breakeven = 0;
          
 /*
          if(OrdersTotal() == 1)
@@ -3582,24 +3461,24 @@ double Strategy_011(int COMMAND)
                if(OrderType() == OP_BUY)
                {
                   if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq > Bid - 10*Point)
-                     beq = Bid - 10*Point;
+                  if(breakeven > Bid - 10*Point)
+                     breakeven = Bid - 10*Point;
                   
-                  if(beq <= OrderStopLoss())
-                     beq = OrderStopLoss();
+                  if(breakeven <= OrderStopLoss())
+                     breakeven = OrderStopLoss();
                }
                else
                {
                   if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq < Ask + 10*Point)
-                     beq = Ask + 10*Point;
+                  if(breakeven < Ask + 10*Point)
+                     breakeven = Ask + 10*Point;
                      
-                  if(beq >= OrderStopLoss())
-                     beq = OrderStopLoss();
+                  if(breakeven >= OrderStopLoss())
+                     breakeven = OrderStopLoss();
                }
             }
          }
@@ -3617,8 +3496,8 @@ double Strategy_011(int COMMAND)
 //                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
                   
                   if(result > Bid - 10*Point)
                      result = Bid - 10*Point;
@@ -3631,8 +3510,8 @@ double Strategy_011(int COMMAND)
 //                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
 
                   if(result < Ask + 10*Point)
                      result = Ask + 10*Point;
@@ -3759,20 +3638,6 @@ double Strategy_012(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
 //         _PRICE = PRICE_LOW;
@@ -4161,7 +4026,7 @@ double Strategy_012(int COMMAND)
       {
 //         break;
 
-         double beq = 0;
+         double breakeven = 0;
          
 /*
          if(OrdersTotal() == 1)
@@ -4174,24 +4039,24 @@ double Strategy_012(int COMMAND)
                if(OrderType() == OP_BUY)
                {
                   if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq > Bid - 10*Point)
-                     beq = Bid - 10*Point;
+                  if(breakeven > Bid - 10*Point)
+                     breakeven = Bid - 10*Point;
                   
-                  if(beq <= OrderStopLoss())
-                     beq = OrderStopLoss();
+                  if(breakeven <= OrderStopLoss())
+                     breakeven = OrderStopLoss();
                }
                else
                {
                   if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq < Ask + 10*Point)
-                     beq = Ask + 10*Point;
+                  if(breakeven < Ask + 10*Point)
+                     breakeven = Ask + 10*Point;
                      
-                  if(beq >= OrderStopLoss())
-                     beq = OrderStopLoss();
+                  if(breakeven >= OrderStopLoss())
+                     breakeven = OrderStopLoss();
                }
             }
          }
@@ -4209,8 +4074,8 @@ double Strategy_012(int COMMAND)
 //                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
                   
                   if(result > Bid - 15*Point)
                      result = Bid - 15*Point;
@@ -4223,8 +4088,8 @@ double Strategy_012(int COMMAND)
 //                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
 
                   if(result < Ask + 15*Point)
                      result = Ask + 15*Point;
@@ -4351,20 +4216,6 @@ double Strategy_013(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
 //         _PRICE = PRICE_LOW;
@@ -4761,7 +4612,7 @@ double Strategy_013(int COMMAND)
       {
          break;
 
-         double beq = 0;
+         double breakeven = 0;
          
 /*
          if(OrdersTotal() == 1)
@@ -4774,24 +4625,24 @@ double Strategy_013(int COMMAND)
                if(OrderType() == OP_BUY)
                {
                   if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq > Bid - 10*Point)
-                     beq = Bid - 10*Point;
+                  if(breakeven > Bid - 10*Point)
+                     breakeven = Bid - 10*Point;
                   
-                  if(beq <= OrderStopLoss())
-                     beq = OrderStopLoss();
+                  if(breakeven <= OrderStopLoss())
+                     breakeven = OrderStopLoss();
                }
                else
                {
                   if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq < Ask + 10*Point)
-                     beq = Ask + 10*Point;
+                  if(breakeven < Ask + 10*Point)
+                     breakeven = Ask + 10*Point;
                      
-                  if(beq >= OrderStopLoss())
-                     beq = OrderStopLoss();
+                  if(breakeven >= OrderStopLoss())
+                     breakeven = OrderStopLoss();
                }
             }
          }
@@ -4809,8 +4660,8 @@ double Strategy_013(int COMMAND)
 //                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
                   
                   if(result > Bid - 15*Point)
                      result = Bid - 15*Point;
@@ -4823,8 +4674,8 @@ double Strategy_013(int COMMAND)
 //                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
 
                   if(result < Ask + 15*Point)
                      result = Ask + 15*Point;
@@ -4967,20 +4818,6 @@ double Strategy_014(int COMMAND)
 
    switch(COMMAND)
    {
-/*
-#define     _CLOSE_LONG                   1
-#define     _CLOSE_SHORT                  2
-#define     _OPEN_LONG                    3
-#define     _OPEN_SHORT                   4
-#define     _GET_LONG_STOPLOSS_PRICE      5
-#define     _GET_SHORT_STOPLOSS_PRICE     6
-#define     _GET_LONG_TAKEPROFIT_PRICE    7
-#define     _GET_SHORT_TAKEPROFIT_PRICE   8
-#define     _GET_LOTS                     9
-#define     _GET_TRAILED_STOPLOSS_PRICE   10
-#define     _GET_TRAILED_TAKEPROFIT_PRICE 11
-#define     _GET_TRADED_TIMEFRAME         12
-*/
       case _OPEN_LONG:
       {
 //         if(!OpenNewBar())
@@ -5330,7 +5167,7 @@ double Strategy_014(int COMMAND)
 
 //         break;
 
-         double beq = 0;
+         double breakeven = 0;
 
          if(OrdersTotal() == 1)
          {
@@ -5342,18 +5179,18 @@ double Strategy_014(int COMMAND)
                if(OrderType() == OP_BUY)
                {
                   if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq > Bid - 10*Point)
-                     beq = Bid - 10*Point;
+                  if(breakeven > Bid - 10*Point)
+                     breakeven = Bid - 10*Point;
                }
                else
                {
                   if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
-                     beq = OrderOpenPrice();
+                     breakeven = OrderOpenPrice();
                   
-                  if(beq < Ask + 10*Point)
-                     beq = Ask + 10*Point;
+                  if(breakeven < Ask + 10*Point)
+                     breakeven = Ask + 10*Point;
                }
             }
          }
@@ -5370,8 +5207,8 @@ double Strategy_014(int COMMAND)
 //                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
                   
-                  if(beq > result)
-                     result = beq;
+                  if(breakeven > result)
+                     result = breakeven;
                   
                   if(result > Bid - 10*Point)
                      result = Bid - 10*Point;
@@ -5384,8 +5221,8 @@ double Strategy_014(int COMMAND)
 //                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
                   result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
                   
-                  if(beq < result)
-                     result = beq;
+                  if(breakeven < result)
+                     result = breakeven;
 
                   if(result < Ask + 10*Point)
                      result = Ask + 10*Point;
@@ -5463,6 +5300,404 @@ double Strategy_014(int COMMAND)
       case _GET_TRADED_TIMEFRAME:
       {
          result = _TIMEFRAME;
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_015(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+      
+   int      _DIFF          = 0;
+   
+   double   result         = 0;
+   
+   int      i;
+
+   switch(COMMAND)
+   {
+      case _OPEN_LONG:
+      {
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+         break;
+      }
+      case _OPEN_PENDING_BUY_STOP:
+      {
+         if(!OpenNewBar())
+            break;
+
+         if(High[1] < High[2])
+         if(Low[1] > Low[2])
+//         if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+         if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//         if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_PENDING_SELL_STOP:
+      {
+         if(!OpenNewBar())
+            break;
+
+         if(High[1] < High[2])
+         if(Low[1] > Low[2])
+//         if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+         if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//         if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+            result = 1;
+                  
+         break;
+      }
+      case _GET_PENDING_BUY_STOP_PRICE:
+      {
+//         break;
+
+         result = High[1] + _DIFF*Point;
+
+         break;
+      }
+      case _GET_PENDING_SELL_STOP_PRICE:
+      {
+//         break;
+
+         result = Low[1] - _DIFF*Point;
+         
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+//         break;
+
+         if(!OpenNewBar())
+            break;
+
+         result = 1;
+
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+//         break;
+
+         if(!OpenNewBar())
+            break;
+
+         result = 1;
+         
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = Low[2];
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         break;
+
+         result = High[2];
+         
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         result = High[2];
+
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         result = Low[2];
+
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+//         break;
+
+//         if(!OpenNewBar())
+//            break;
+         
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+         break;
+      }
+      case _GET_PENDING_ORDER_EXPIRATION:
+      {
+         result = iTime(_SYMBOL, _TIMEFRAME, 0) + _TIMEFRAME*60;
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_016(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+   int      _SLOWEMA       = 26;
+   int      _FASTEMA       = 12;
+   int      _MASIGNAL      = 9;
+   int      _SHIFT         = 0;
+   int      _PRICE         = PRICE_OPEN;
+
+   int      _DIFF          = 0;
+   
+   double   result         = 0;
+   double   MACDHistogram;
+   double   MACDSignal;
+   
+   int      i;
+
+   switch(COMMAND)
+   {
+      case _OPEN_LONG:
+      {
+//         if(!OpenNewBar())
+//            break;
+
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+//         if(MACDHistogram > MACDSignal)
+         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram < 0)
+         if(MACDHistogram > 0)
+         if(High[1] < High[2])
+         if(Low[1] > Low[2])
+//         if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+         if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//         if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+         if(Ask > High[1] + _DIFF*Point)
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         if(!OpenNewBar())
+//            break;
+
+         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
+         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
+
+//         if(MACDHistogram < MACDSignal)
+         if(MACDHistogram > MACDSignal)
+//         if(MACDHistogram > 0)
+         if(MACDHistogram < 0)
+         if(High[1] < High[2])
+         if(Low[1] > Low[2])
+//         if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+         if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//         if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+         if(Bid < Low[1] - _DIFF*Point)
+            result = 1;
+                  
+         break;
+      }
+      case _OPEN_PENDING_BUY_STOP:
+      {
+         break;
+      }
+      case _OPEN_PENDING_SELL_STOP:
+      {
+         break;
+      }
+      case _GET_PENDING_BUY_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_PENDING_SELL_STOP_PRICE:
+      {
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(High[2] > High[1])
+                  result = 1;
+            }
+         }
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(Low[2] < Low[1])
+                  result = 1;
+            }
+         }
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         break;
+
+//         result = Low[2];
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+         if(result > Bid - 10*Point)
+            result = Bid - 10*Point;
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         break;
+
+//         result = High[2];
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+         if(result < Ask + 10*Point)
+            result = Ask + 10*Point;
+         
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+//         if(!OpenNewBar())
+//            break;
+
+//         break;
+
+         double breakeven = 0;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
+                     breakeven = OrderOpenPrice();
+                  
+                  if(breakeven > Bid - 10*Point)
+                     breakeven = Bid - 10*Point;
+               }
+               else
+               {
+                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
+                     breakeven = OrderOpenPrice();
+                  
+                  if(breakeven < Ask + 10*Point)
+                     breakeven = Ask + 10*Point;
+               }
+            }
+         }
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  
+                  if(breakeven > result)
+                     result = breakeven;
+                  
+                  if(result > Bid - 10*Point)
+                     result = Bid - 10*Point;
+                  
+                  if(result <= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+               else
+               {
+//                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                  
+                  if(breakeven < result)
+                     result = breakeven;
+
+                  if(result < Ask + 10*Point)
+                     result = Ask + 10*Point;
+                     
+                  if(result >= OrderStopLoss())
+                     result = OrderStopLoss();
+               }
+            }
+         }
+         
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+
+         break;
+      }
+      case _GET_PENDING_ORDER_EXPIRATION:
+      {
+         break;
+
+         result = iTime(_SYMBOL, _TIMEFRAME, 0) + _TIMEFRAME*60;
+
          break;
       }
    }
