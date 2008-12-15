@@ -11,7 +11,7 @@
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
-int   _STRATEGY_NUMBER              = 16;
+int   _STRATEGY_NUMBER              = 17;
 
 // 1 - PERIOD_M1
 // 2 - PERIOD_M5
@@ -26,8 +26,10 @@ int   _STRATEGY_NUMBER              = 16;
 // _STRATEGY_TIMEFRAME_CHOICE
 //extern string poznamka1 = "0 - vyber timeframe podla dropdown menu - premenna _STRATEGY_TIMEFRAME sa ignoruje";
 //extern string poznamka2 = "1 - vyber timeframe podla kodu timeframe 1 - 9";
-extern int   _STRATEGY_TIMEFRAME_CHOICE    = 1;
-extern int   _STRATEGY_TIMEFRAME           = 1;
+extern int     _STRATEGY_TIMEFRAME_CHOICE    = 1;
+extern int     _STRATEGY_TIMEFRAME           = 1;
+
+extern int     _SIGNAL_COMBINATION           = 1;
 
 //string poznamka1 = "0 - vyber timeframe podla dropdown menu - premenna _STRATEGY_TIMEFRAME sa ignoruje";
 //string poznamka2 = "1 - vyber timeframe podla kodu timeframe 1 - 9";
@@ -687,6 +689,12 @@ double Strategy(int STRATEGY, int COMMAND)
       case 16:
       {
          return(Strategy_016(COMMAND));
+      }
+// gap trading - medzi dnami/tyzdnami - gap sa zvykne zaplnit
+// je dobre pockat na support - resistance aby sme mali pevny spodok - strop
+      case 17:
+      {
+         return(Strategy_017(COMMAND));
       }
    }
 
@@ -5484,18 +5492,415 @@ double Strategy_016(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-//         if(MACDHistogram > MACDSignal)
-         if(MACDHistogram < MACDSignal)
-//         if(MACDHistogram < 0)
-         if(MACDHistogram > 0)
-         if(High[1] < High[2])
-         if(Low[1] > Low[2])
-//         if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
-         if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
-//         if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
-         if(Ask > High[1] + _DIFF*Point)
-            result = 1;
-                  
+         switch(_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 5:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 6:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 7:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 8:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 9:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 10:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 11:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 12:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 13:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 14:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 15:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 16:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 17:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 18:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 19:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 20:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 21:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 22:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 23:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 24:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 25:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 26:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 27:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Ask > High[1] + _DIFF*Point)
+                  result = 1;
+               break;
+            }
+         }
+              
          break;
       }
       case _OPEN_SHORT:
@@ -5506,17 +5911,428 @@ double Strategy_016(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-//         if(MACDHistogram < MACDSignal)
-         if(MACDHistogram > MACDSignal)
-//         if(MACDHistogram > 0)
-         if(MACDHistogram < 0)
+         switch(_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 5:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 6:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 7:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 8:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 9:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 10:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 11:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 12:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 13:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 14:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 15:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 16:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 17:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 18:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+//               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 19:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 20:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 21:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 22:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 23:
+            {
+//               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 24:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 25:
+            {
+//               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 26:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+//               if(MACDHistogram < 0)
+               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+            case 27:
+            {
+               if(MACDHistogram > MACDSignal)
+//               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+//               if(MACDHistogram > 0)
+               if(High[1] < High[2])
+               if(Low[1] > Low[2])
+//               if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//               if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+               if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
+               if(Bid < Low[1] - _DIFF*Point)
+                  result = 1;
+               break;
+            }
+         }
+
+/*
+         if(MACDHistogram < MACDSignal)
+//         if(MACDHistogram > MACDSignal)
+         if(MACDHistogram > 0)
+//         if(MACDHistogram < 0)
          if(High[1] < High[2])
          if(Low[1] > Low[2])
-//         if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
-         if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
+         if(MathAbs(Open[1] - Close[1]) < MathAbs(Open[2] - Close[2]))
+//         if((Open[2] > Close[2] && Open[2] > Open[1] && Open[2] > Close[1] && Close[2] < Open[1] && Close[2] < Close[1]) || (Open[2] < Close[2] && Open[2] < Open[1] && Open[2] < Close[1] && Close[2] > Open[1] && Close[2] > Close[1]))
 //         if((Open[2] > Close[2] && Open[2] > High[1] && Close[2] < Low[1]) || (Open[2] < Close[2] && Open[2] < Low[1] && Close[2] > High[1]))
          if(Bid < Low[1] - _DIFF*Point)
             result = 1;
+*/
                   
          break;
       }
@@ -5538,6 +6354,11 @@ double Strategy_016(int COMMAND)
       }
       case _CLOSE_LONG:
       {
+//         break;
+
+         if(Bid > High[2])
+            result = 1;
+
          break;
 
          if(OrdersTotal() == 1)
@@ -5551,10 +6372,16 @@ double Strategy_016(int COMMAND)
                   result = 1;
             }
          }
+
          break;
       }
       case _CLOSE_SHORT:
       {
+//         break;
+
+         if(Ask < Low[2])
+            result = 1;
+
          break;
 
          if(OrdersTotal() == 1)
@@ -5568,14 +6395,15 @@ double Strategy_016(int COMMAND)
                   result = 1;
             }
          }
+
          break;
       }
       case _GET_LONG_STOPLOSS_PRICE:
       {
 //         break;
 
-//         result = Low[2];
-         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+         result = Low[2];
+//         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
          if(result > Bid - 10*Point)
             result = Bid - 10*Point;
 
@@ -5585,8 +6413,8 @@ double Strategy_016(int COMMAND)
       {
 //         break;
 
-//         result = High[2];
-         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+         result = High[2];
+//         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
          if(result < Ask + 10*Point)
             result = Ask + 10*Point;
          
@@ -5602,10 +6430,10 @@ double Strategy_016(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
+         break;
+
 //         if(!OpenNewBar())
 //            break;
-
-//         break;
 
          double breakeven = 0;
 
@@ -5698,6 +6526,133 @@ double Strategy_016(int COMMAND)
 
          result = iTime(_SYMBOL, _TIMEFRAME, 0) + _TIMEFRAME*60;
 
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_017(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+         
+   double   result         = 0;
+   
+   int      i;
+
+   switch(COMMAND)
+   {
+      case _OPEN_LONG:
+      {
+//         break;
+
+//         if(!OpenNewBar())
+//            break;
+         if(iVolume(Symbol(), PERIOD_W1, 0) == 1)
+
+// if there was a weekly gap
+         if(iClose(Symbol(), PERIOD_W1, 1) > iOpen(Symbol(), PERIOD_W1, 0))
+// if there is still a gap
+         if(iClose(Symbol(), PERIOD_W1, 1) > iHigh(Symbol(), PERIOD_W1, 0))
+// if price is inside of this gap
+         if(Ask < iClose(Symbol(), PERIOD_W1, 1) && Ask >= iOpen(Symbol(), PERIOD_W1, 0))
+            result = 1;
+
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         break;
+
+//         if(!OpenNewBar())
+//            break;
+         if(iVolume(Symbol(), PERIOD_W1, 0) == 1)
+            
+// if there was a weekly gap
+         if(iClose(Symbol(), PERIOD_W1, 1) < iOpen(Symbol(), PERIOD_W1, 0))
+// if there is still a gap
+         if(iClose(Symbol(), PERIOD_W1, 1) < iLow(Symbol(), PERIOD_W1, 0))
+// if price is inside of this gap
+         if(Bid > iClose(Symbol(), PERIOD_W1, 1) && Bid <= iOpen(Symbol(), PERIOD_W1, 0))
+            result = 1;
+
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+//         if(Ask >= iClose(Symbol(), PERIOD_D1, 1))
+         if(Ask >= iClose(Symbol(), PERIOD_W1, 1))
+            result = 1;
+            
+            break;
+      }
+      case _CLOSE_SHORT:
+      {
+//         if(Bid <= iClose(Symbol(), PERIOD_D1, 1))
+         if(Bid <= iClose(Symbol(), PERIOD_W1, 1))
+            result = 1;
+            
+            break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+         result = Ask - 50*Point;
+         
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+         result = Bid + 50*Point;
+         
+         break;
+      }
+      case _OPEN_PENDING_BUY_STOP:
+      {
+         break;
+      }
+      case _OPEN_PENDING_SELL_STOP:
+      {
+         break;
+      }
+      case _GET_PENDING_BUY_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_PENDING_SELL_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+         break;
+      }
+      case _GET_PENDING_ORDER_EXPIRATION:
+      {
          break;
       }
    }
