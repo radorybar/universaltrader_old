@@ -7722,7 +7722,7 @@ double Strategy_022(int COMMAND)
          LowerZIGZAGShift2 = iBarShift(_SYMBOL, _TIMEFRAME, LowerZIGZAGTime2);
          
 //         LastUpperFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
-         LastLowerFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+//         LastLowerFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
 
 //         EdgePrice = LowerZIGZAG2 - (LowerZIGZAG2 - LowerZIGZAG1) * (LowerZIGZAGShift2 / (LowerZIGZAGShift2 - LowerZIGZAGShift1));
          EdgePrice = LowerZIGZAG1 + LowerZIGZAGShift1 * (LowerZIGZAG1 - LowerZIGZAG2) / (LowerZIGZAGShift2 - LowerZIGZAGShift1);
@@ -7731,8 +7731,8 @@ double Strategy_022(int COMMAND)
          
          if(LowerZIGZAGTime1 < UpperZIGZAGTime1)
          if(LastZIGZAGTime != LowerZIGZAGTime1)
-         if(LastLowerFractal < EdgePrice + 10*Point)
-         if(Ask > EdgePrice)
+//         if(LastUpperFractal < EdgePrice && LastLowerFractal < EdgePrice)
+         if(Ask < EdgePrice)
 //         if(Low[1] < EdgePrice)
          {
             result = 1;
@@ -7764,7 +7764,7 @@ double Strategy_022(int COMMAND)
          UpperZIGZAGShift1 = iBarShift(_SYMBOL, _TIMEFRAME, UpperZIGZAGTime1);
          UpperZIGZAGShift2 = iBarShift(_SYMBOL, _TIMEFRAME, UpperZIGZAGTime2);
          
-         LastUpperFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+//         LastUpperFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
 //         LastLowerFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
 
 //         EdgePrice = UpperZIGZAG2 - (UpperZIGZAG2 - UpperZIGZAG1) * (UpperZIGZAGShift2 / (UpperZIGZAGShift2 - UpperZIGZAGShift1));
@@ -7774,9 +7774,9 @@ double Strategy_022(int COMMAND)
 
          if(LowerZIGZAGTime1 > UpperZIGZAGTime1)
          if(LastZIGZAGTime != UpperZIGZAGTime1)
-         if(LastUpperFractal > EdgePrice - 20*Point)
-         if(Bid < EdgePrice)
+//         if(LastUpperFractal > EdgePrice && LastLowerFractal > EdgePrice)
 //         if(High[1] > EdgePrice)
+         if(Bid > EdgePrice)
          {
             result = 1;
 
