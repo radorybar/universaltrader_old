@@ -11,7 +11,7 @@
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
-int   _STRATEGY_NUMBER              = 21;
+int   _STRATEGY_NUMBER              = 22;
 
 // 1 - PERIOD_M1
 // 2 - PERIOD_M5
@@ -957,6 +957,11 @@ double Strategy(int STRATEGY, int COMMAND)
       case 21:
       {
          return(Strategy_021(COMMAND));
+      }
+// ZIGZAG spojnice vrcholov su supporty/resistance - odrazenie od nich je pravdepodobne
+      case 22:
+      {
+         return(Strategy_022(COMMAND));
       }
    }
 
@@ -7312,6 +7317,8 @@ double Strategy_021(int COMMAND)
    datetime LowerZIGZAGTime2;
    int      UpperZIGZAGShift2;
    int      LowerZIGZAGShift2;
+   double   LastUpperFractal;
+   double   LastLowerFractal;
 
    int      BreakOutTreshold = 0;
    double   EdgePrice;
@@ -7342,6 +7349,9 @@ double Strategy_021(int COMMAND)
          UpperZIGZAGShift1 = iBarShift(_SYMBOL, _TIMEFRAME, UpperZIGZAGTime1);
          UpperZIGZAGShift2 = iBarShift(_SYMBOL, _TIMEFRAME, UpperZIGZAGTime2);
          
+//         LastUpperFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+//         LastLowerFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+
 //         EdgePrice = UpperZIGZAG2 - (UpperZIGZAG2 - UpperZIGZAG1) * (UpperZIGZAGShift2 / (UpperZIGZAGShift2 - UpperZIGZAGShift1));
          EdgePrice = UpperZIGZAG1 + UpperZIGZAGShift1 * (UpperZIGZAG1 - UpperZIGZAG2) / (UpperZIGZAGShift2 - UpperZIGZAGShift1);
 
@@ -7349,6 +7359,7 @@ double Strategy_021(int COMMAND)
 
          if(LowerZIGZAGTime1 > UpperZIGZAGTime1)
          if(LastZIGZAGTime != UpperZIGZAGTime1)
+//         if(LastUpperFractal > EdgePrice && LastLowerFractal > EdgePrice)
          if(Ask > EdgePrice + BreakOutTreshold*Point)
          {
             result = 1;
@@ -7380,6 +7391,9 @@ double Strategy_021(int COMMAND)
          LowerZIGZAGShift1 = iBarShift(_SYMBOL, _TIMEFRAME, LowerZIGZAGTime1);
          LowerZIGZAGShift2 = iBarShift(_SYMBOL, _TIMEFRAME, LowerZIGZAGTime2);
          
+//         LastUpperFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+//         LastLowerFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+
 //         EdgePrice = LowerZIGZAG2 - (LowerZIGZAG2 - LowerZIGZAG1) * (LowerZIGZAGShift2 / (LowerZIGZAGShift2 - LowerZIGZAGShift1));
          EdgePrice = LowerZIGZAG1 + LowerZIGZAGShift1 * (LowerZIGZAG1 - LowerZIGZAG2) / (LowerZIGZAGShift2 - LowerZIGZAGShift1);
 
@@ -7387,6 +7401,7 @@ double Strategy_021(int COMMAND)
          
          if(LowerZIGZAGTime1 < UpperZIGZAGTime1)
          if(LastZIGZAGTime != LowerZIGZAGTime1)
+//         if(LastUpperFractal < EdgePrice && LastLowerFractal < EdgePrice)
          if(Bid < EdgePrice - BreakOutTreshold*Point)
          {
             result = 1;
@@ -7610,6 +7625,416 @@ double Strategy_021(int COMMAND)
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
 //         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+
+//            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+               }
+               if(OrderType() == OP_SELL)
+               {
+                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+               }
+            }
+         }
+
+         break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+
+         break;
+      }
+      case _GET_PENDING_ORDER_EXPIRATION:
+      {
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_022(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+         
+   double   UpperZIGZAG1;
+   double   LowerZIGZAG1;
+   datetime UpperZIGZAGTime1;
+   datetime LowerZIGZAGTime1;
+   int      UpperZIGZAGShift1;
+   int      LowerZIGZAGShift1;
+   double   UpperZIGZAG2;
+   double   LowerZIGZAG2;
+   datetime UpperZIGZAGTime2;
+   datetime LowerZIGZAGTime2;
+   int      UpperZIGZAGShift2;
+   int      LowerZIGZAGShift2;
+   double   LastUpperFractal;
+   double   LastLowerFractal;
+
+   int      BreakOutTreshold = 0;
+   double   EdgePrice;
+   static datetime LastZIGZAGTime = 0;
+
+   double   result         = 0;
+   
+   int      i;
+
+//   Print(_TIMEFRAME);
+
+   switch(COMMAND)
+   {
+      case _OPEN_LONG:
+      {
+//         break;
+
+//         if(!OpenNewBar())
+//            break;
+
+         LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+         LowerZIGZAGTime1 = getLastZIGZAGTime(_SYMBOL, _TIMEFRAME, false);
+         LowerZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+         LowerZIGZAGTime2 = getPreviousZIGZAGTime(_SYMBOL, _TIMEFRAME, false);
+
+         UpperZIGZAGTime1 = getLastZIGZAGTime(_SYMBOL, _TIMEFRAME, true);
+
+         LowerZIGZAGShift1 = iBarShift(_SYMBOL, _TIMEFRAME, LowerZIGZAGTime1);
+         LowerZIGZAGShift2 = iBarShift(_SYMBOL, _TIMEFRAME, LowerZIGZAGTime2);
+         
+//         LastUpperFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+         LastLowerFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+
+//         EdgePrice = LowerZIGZAG2 - (LowerZIGZAG2 - LowerZIGZAG1) * (LowerZIGZAGShift2 / (LowerZIGZAGShift2 - LowerZIGZAGShift1));
+         EdgePrice = LowerZIGZAG1 + LowerZIGZAGShift1 * (LowerZIGZAG1 - LowerZIGZAG2) / (LowerZIGZAGShift2 - LowerZIGZAGShift1);
+
+//         Print(UpperZIGZAG1, " ", UpperZIGZAGTime1, " ", UpperZIGZAG2, " ", UpperZIGZAGTime2, " ", LowerZIGZAG1, " ", LowerZIGZAGTime1, " ", LowerZIGZAG2, " ", LowerZIGZAGTime2, " ", UpperZIGZAGShift1, " ", UpperZIGZAGShift2, " ", LowerZIGZAGShift1, " ", LowerZIGZAGShift2, " ", EdgePrice);
+         
+         if(LowerZIGZAGTime1 < UpperZIGZAGTime1)
+         if(LastZIGZAGTime != LowerZIGZAGTime1)
+         if(LastLowerFractal < EdgePrice + 10*Point)
+         if(Ask > EdgePrice)
+//         if(Low[1] < EdgePrice)
+         {
+            result = 1;
+
+//            ObjectCreate(StringConcatenate(LowerZIGZAGTime1, 0), OBJ_TREND, 0, LowerZIGZAGTime1, LowerZIGZAG1, LowerZIGZAGTime2, LowerZIGZAG2);
+//            ObjectCreate(StringConcatenate(LowerZIGZAGTime1, 1), OBJ_TREND, 0, LowerZIGZAGTime1, LowerZIGZAG1, Time[0], EdgePrice);
+//            ObjectSet(StringConcatenate(LowerZIGZAGTime1, 1), OBJPROP_COLOR, 0x00FFFF);
+            
+//            Comment(LastZIGZAGTime, " - ", LowerZIGZAGTime1);
+            LastZIGZAGTime = LowerZIGZAGTime1;
+         }
+         
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         break;
+
+//         if(!OpenNewBar())
+//            break;
+
+         UpperZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         UpperZIGZAGTime1 = getLastZIGZAGTime(_SYMBOL, _TIMEFRAME, true);
+         UpperZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         UpperZIGZAGTime2 = getPreviousZIGZAGTime(_SYMBOL, _TIMEFRAME, true);
+
+         LowerZIGZAGTime1 = getLastZIGZAGTime(_SYMBOL, _TIMEFRAME, false);
+
+         UpperZIGZAGShift1 = iBarShift(_SYMBOL, _TIMEFRAME, UpperZIGZAGTime1);
+         UpperZIGZAGShift2 = iBarShift(_SYMBOL, _TIMEFRAME, UpperZIGZAGTime2);
+         
+         LastUpperFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+//         LastLowerFractal = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+
+//         EdgePrice = UpperZIGZAG2 - (UpperZIGZAG2 - UpperZIGZAG1) * (UpperZIGZAGShift2 / (UpperZIGZAGShift2 - UpperZIGZAGShift1));
+         EdgePrice = UpperZIGZAG1 + UpperZIGZAGShift1 * (UpperZIGZAG1 - UpperZIGZAG2) / (UpperZIGZAGShift2 - UpperZIGZAGShift1);
+
+//         Print(UpperZIGZAG1, " ", UpperZIGZAGTime1, " ", UpperZIGZAG2, " ", UpperZIGZAGTime2, " ", LowerZIGZAG1, " ", LowerZIGZAGTime1, " ", LowerZIGZAG2, " ", LowerZIGZAGTime2, " ", UpperZIGZAGShift1, " ", UpperZIGZAGShift2, " ", LowerZIGZAGShift1, " ", LowerZIGZAGShift2, " ", EdgePrice);
+
+         if(LowerZIGZAGTime1 > UpperZIGZAGTime1)
+         if(LastZIGZAGTime != UpperZIGZAGTime1)
+         if(LastUpperFractal > EdgePrice - 20*Point)
+         if(Bid < EdgePrice)
+//         if(High[1] > EdgePrice)
+         {
+            result = 1;
+
+//            ObjectCreate(StringConcatenate(UpperZIGZAGTime1, 0), OBJ_TREND, 0, UpperZIGZAGTime1, UpperZIGZAG1, UpperZIGZAGTime2, UpperZIGZAG2);
+//            ObjectCreate(StringConcatenate(UpperZIGZAGTime1, 1), OBJ_TREND, 0, UpperZIGZAGTime1, UpperZIGZAG1, Time[0], EdgePrice);
+//            ObjectSet(StringConcatenate(UpperZIGZAGTime1, 1), OBJPROP_COLOR, 0x00FFFF);
+            
+//            Comment(LastZIGZAGTime, " - ", UpperZIGZAGTime1);
+            LastZIGZAGTime = UpperZIGZAGTime1;
+         }
+         
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+//         break;
+
+//         if(!OpenNewBar())
+//            break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+//            if(OrderProfit() > 0)
+            {
+               if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 0, 0) > 0)
+                  result = 1;
+            }
+         }
+
+         break;
+
+         if(!OpenNewBar())
+            break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+//               if(iCCI(_SYMBOL, _TIMEFRAME, 14, PRICE_CLOSE, 1) < 100)
+               if(iCCI(_SYMBOL, _TIMEFRAME, 14, PRICE_OPEN, 0) < 100)
+                  result = 1;
+            }
+         }
+
+         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) > iHigh(_SYMBOL, _TIMEFRAME, 0))
+                   result = 1;
+            }
+         }
+
+         break;
+
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(Bid < iLow(_SYMBOL, _TIMEFRAME, 1))
+                      result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_BUY)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+//         break;
+
+//         if(!OpenNewBar())
+//            break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+//            if(OrderProfit() > 0)
+            {
+               if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 0, 0) > 0)
+                  result = 1;
+            }
+         }
+
+         break;
+
+         if(!OpenNewBar())
+            break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+//               if(iCCI(_SYMBOL, _TIMEFRAME, 14, PRICE_CLOSE, 1) > -100)
+               if(iCCI(_SYMBOL, _TIMEFRAME, 14, PRICE_OPEN, 0) > -100)
+                  result = 1;
+            }
+         }
+
+         break;
+
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
+//                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > iLow(_SYMBOL, _TIMEFRAME, 0))
+                  result = 1;
+            }
+         }
+
+         break;
+         
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
+//         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
+//         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+            result = 1;
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(Ask > iHigh(_SYMBOL, _TIMEFRAME, 1))
+                     result = 1;
+               }
+            }
+         }
+
+         break;
+         
+         if(OrdersTotal() == 1)
+         {
+            OrderSelect(0, SELECT_BY_POS);
+            if(OrderMagicNumber() != _MAGICNUMBER)
+               break;
+            if(OrderProfit() > 0)
+            {
+               if(OrderType() == OP_SELL)
+               {
+                  if(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) > getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true))
+                     result = 1;
+               }
+            }
+         }
+         
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         result = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+//         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+         result = Ask - 20*Point;
+         
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         result = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+//         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+         result = Bid + 20*Point;
+         
+         break;
+      }
+      case _OPEN_PENDING_BUY_STOP:
+      {
+         break;
+      }
+      case _OPEN_PENDING_SELL_STOP:
+      {
+         break;
+      }
+      case _GET_PENDING_BUY_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_PENDING_SELL_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+         break;
 
          if(OrdersTotal() == 1)
          {
