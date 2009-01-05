@@ -9,7 +9,10 @@
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 int   _ALL_STRATEGIES                  = 22;
-int   _ACTIVE_STRATEGIES[]             = {1,2,3,4};
+int   _ACTIVE_STRATEGIES[]             = {21,22};
+
+int   _MIN_STOPLOSS_DISTANCE           = 10;
+int   _MIN_TAKEPROFIT_DISTANCE         = 15;
 
 // 1 - PERIOD_M1
 // 2 - PERIOD_M5
@@ -288,12 +291,10 @@ void OpenPosition(bool SHORTLONG, double LOTS, double STOPLOSS, double TAKEPROFI
 {
    if(SHORTLONG)
    {
-//      Print(Symbol(), " - ",OP_SELL, " - ", LOTS, " - ", Bid, " - ", SLIPPAGE, " - ", STOPLOSS, " - ", TAKEPROFIT, " - ", StringConcatenate(MAGICNUMBER, ""), " - ", MAGICNUMBER, " - ", 0, " - ", Red);
       OrderSend(Symbol(), OP_SELL, LOTS, Bid, SLIPPAGE, STOPLOSS, TAKEPROFIT, StringConcatenate(MAGICNUMBER, ""), MAGICNUMBER, 0, Red);
    }
    else
    {
-//      Print(Symbol(), " - ",  OP_BUY, " - ", LOTS, " - ", Ask, " - ", SLIPPAGE, " - ", STOPLOSS, " - ", TAKEPROFIT, " - ", StringConcatenate(MAGICNUMBER, ""), " - ", MAGICNUMBER, " - ", 0, " - ", Blue);
       OrderSend(Symbol(), OP_BUY, LOTS, Ask, SLIPPAGE, STOPLOSS, TAKEPROFIT, StringConcatenate(MAGICNUMBER, ""), MAGICNUMBER, 0, Blue);
    }
    
@@ -344,8 +345,36 @@ void ModifyPosition(int TICKETNUMBER, double STOPLOSS, double TAKEPROFIT)
    OrderSelect(TICKETNUMBER, SELECT_BY_TICKET);
    if(NormalizeDouble(OrderStopLoss(), 4) == NormalizeDouble(STOPLOSS, 4) && NormalizeDouble(OrderTakeProfit(), 4) == NormalizeDouble(TAKEPROFIT, 4))
       return;
-      
-//   Print(OrderTicket(), " - ", OrderOpenPrice(), " - ", OrderStopLoss(), " - ", OrderTakeProfit(), " - ", STOPLOSS, " - ", TAKEPROFIT);
+
+//check minimal distance of STOPLOSS and TAKEPROFIT and if are not met - correct SL and TP values to minimal values and print message into LOG file
+   if(OrderType() == OP_BUY)
+   {
+      if(Bid - _MIN_STOPLOSS_DISTANCE*Point < STOPLOSS)
+      {
+         Print("Bad OrderModify() STOPLOSS defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Bid was: ", Bid, " and STOPLOSS was: ", STOPLOSS, " . STOPLOSS set to minimal value: ", Bid - _MIN_STOPLOSS_DISTANCE*Point);
+         STOPLOSS = Bid - _MIN_STOPLOSS_DISTANCE*Point;
+      }
+      if(Bid + _MIN_TAKEPROFIT_DISTANCE*Point > TAKEPROFIT)
+      {
+         Print("Bad OrderModify() TAKEPROFIT defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Bid was: ", Bid, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Bid + _MIN_TAKEPROFIT_DISTANCE*Point);
+         TAKEPROFIT = Bid + _MIN_TAKEPROFIT_DISTANCE*Point;
+      }
+   }
+   if(OrderType() == OP_SELL)
+   {
+      if(Ask + _MIN_STOPLOSS_DISTANCE*Point > STOPLOSS)
+      {
+         Print("Bad OrderModify() STOPLOSS defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Ask was: ", Ask, " and STOPLOSS was: ", STOPLOSS, " . STOPLOSS set to minimal value: ", Ask + _MIN_STOPLOSS_DISTANCE*Point);
+         STOPLOSS = Ask + _MIN_STOPLOSS_DISTANCE*Point;
+      }
+      if(Ask - _MIN_TAKEPROFIT_DISTANCE*Point < TAKEPROFIT)
+      {
+         Print("Bad OrderModify() TAKEPROFIT defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Ask was: ", Ask, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Ask - _MIN_TAKEPROFIT_DISTANCE*Point);
+         TAKEPROFIT = Ask - _MIN_TAKEPROFIT_DISTANCE*Point;
+      }
+   }
+   
+//   Print(Ask, " - ", Bid, " - ", OrderTicket(), " - ", OrderOpenPrice(), " - ", OrderStopLoss(), " - ", OrderTakeProfit(), " - ", STOPLOSS, " - ", TAKEPROFIT, " - ", OrderMagicNumber());
    OrderModify(OrderTicket(), OrderOpenPrice(), STOPLOSS, TAKEPROFIT, 0);
 }
 //------------------------------------------------------------------------------------
