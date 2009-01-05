@@ -1,9 +1,6 @@
 #property copyright "slacktrader"
 #property link      "slacktrader"
 
-#define     _MAGICNUMBER               123456
-
-
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
@@ -11,7 +8,8 @@
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
-int   _STRATEGY_NUMBER              = 22;
+int   _ALL_STRATEGIES                  = 22;
+int   _ACTIVE_STRATEGIES[]             = {1,2,3,4};
 
 // 1 - PERIOD_M1
 // 2 - PERIOD_M5
@@ -76,6 +74,8 @@ int     _SIGNAL_COMBINATION           = 1;
 #define     _GET_PENDING_BUY_STOP_PRICE   17
 #define     _GET_PENDING_SELL_STOP_PRICE  18
 #define     _GET_PENDING_ORDER_EXPIRATION 19
+#define     _GET_STRATEGY_NUMBER          20
+#define     _GET_STRATEGY_MAGICNUMBER     21
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
@@ -99,37 +99,92 @@ int start()
 {
    double            Stoploss          = 0;
    double            TakeProfit        = 0;
+   int               OrderTickets[];
+   int               i, j, k;
+
+   ArrayResize(OrderTickets, 0);
    
    if(LastBarTraded())
       return(0);
-
-   if(OrdersTotal() > 0)
+   
+//Get all openned orders and their magicnumber   
+   for(i = 0; i < OrdersTotal(); i++)
    {
-      Stoploss = Strategy(_STRATEGY_NUMBER, _GET_TRAILED_STOPLOSS_PRICE);
-      TakeProfit = Strategy(_STRATEGY_NUMBER, _GET_TRAILED_TAKEPROFIT_PRICE);
-   
-      if(Stoploss != 0 || TakeProfit != 0)
-         ModifyAllPositions(_MAGICNUMBER, Stoploss, TakeProfit);
-
-      if(Strategy(_STRATEGY_NUMBER, _CLOSE_LONG) == 1)
-         CloseAllLongPositions(_MAGICNUMBER);
-      if(Strategy(_STRATEGY_NUMBER, _CLOSE_SHORT) == 1)
-         CloseAllShortPositions(_MAGICNUMBER);
+      OrderSelect(i, SELECT_BY_POS);
+      ArrayResize(OrderTickets, ArraySize(OrderTickets) + 1);
+      OrderTickets[ArraySize(OrderTickets) - 1] = OrderTicket();
    }
-   
 
+//iterate all strategies and choose only active ones
+   for(i = 0; i < _ALL_STRATEGIES; i++)
+   {
+//iterate all active strategies and aply strategy on order if magicnumbers are equal
+      for(j = 0; j < ArraySize(_ACTIVE_STRATEGIES); j++)
+      {
+         if(Strategy(i, _GET_STRATEGY_NUMBER) != _ACTIVE_STRATEGIES[j])
+            continue;
+
+         for(k = 0; k < ArraySize(OrderTickets); k++)
+         {
+            OrderSelect(OrderTickets[k], SELECT_BY_TICKET);
+         
+            if(OrderMagicNumber() != Strategy(_ACTIVE_STRATEGIES[j], _GET_STRATEGY_MAGICNUMBER))
+               continue;
+         
+            Stoploss = Strategy(_ACTIVE_STRATEGIES[j], _GET_TRAILED_STOPLOSS_PRICE);
+            TakeProfit = Strategy(_ACTIVE_STRATEGIES[j], _GET_TRAILED_TAKEPROFIT_PRICE);
+
+            if(Stoploss != 0 || TakeProfit != 0)
+               ModifyAllPositions(OrderMagicNumber(), Stoploss, TakeProfit);
+
+            if(Strategy(_ACTIVE_STRATEGIES[j], _CLOSE_LONG) == 1)
+               CloseAllLongPositions(OrderMagicNumber());
+            if(Strategy(_ACTIVE_STRATEGIES[j], _CLOSE_SHORT) == 1)
+               CloseAllShortPositions(OrderMagicNumber());
+         }
+      }
+   }
+      
    if(!TradeAllowed(1))
       return(0);
 
-   if(Strategy(_STRATEGY_NUMBER, _OPEN_LONG) == 1)
-      OpenPosition(false, Strategy(_STRATEGY_NUMBER, _GET_LOTS), Strategy(_STRATEGY_NUMBER, _GET_LONG_STOPLOSS_PRICE), Strategy(_STRATEGY_NUMBER, _GET_LONG_TAKEPROFIT_PRICE), 3, _MAGICNUMBER);
-   if(Strategy(_STRATEGY_NUMBER, _OPEN_SHORT) == 1)
-      OpenPosition(true, Strategy(_STRATEGY_NUMBER, _GET_LOTS), Strategy(_STRATEGY_NUMBER, _GET_SHORT_STOPLOSS_PRICE), Strategy(_STRATEGY_NUMBER, _GET_SHORT_TAKEPROFIT_PRICE), 3, _MAGICNUMBER);
+//iterate all strategies and choose only active ones
+   for(i = 0; i < _ALL_STRATEGIES; i++)
+   {
+      bool OrderExists = false;
+//iterate all active strategies and aply strategy on order if magicnumbers are equal
 
-   if(Strategy(_STRATEGY_NUMBER, _OPEN_PENDING_BUY_STOP) == 1)
-      OpenPendingPosition(false, Strategy(_STRATEGY_NUMBER, _GET_LOTS), Strategy(_STRATEGY_NUMBER, _GET_PENDING_BUY_STOP_PRICE), Strategy(_STRATEGY_NUMBER, _GET_LONG_STOPLOSS_PRICE), Strategy(_STRATEGY_NUMBER, _GET_LONG_TAKEPROFIT_PRICE), 3, _MAGICNUMBER, Strategy(_STRATEGY_NUMBER, _GET_PENDING_ORDER_EXPIRATION));
-   if(Strategy(_STRATEGY_NUMBER, _OPEN_PENDING_SELL_STOP) == 1)
-      OpenPendingPosition(true, Strategy(_STRATEGY_NUMBER, _GET_LOTS), Strategy(_STRATEGY_NUMBER, _GET_PENDING_SELL_STOP_PRICE), Strategy(_STRATEGY_NUMBER, _GET_SHORT_STOPLOSS_PRICE), Strategy(_STRATEGY_NUMBER, _GET_SHORT_TAKEPROFIT_PRICE), 3, _MAGICNUMBER, Strategy(_STRATEGY_NUMBER, _GET_PENDING_ORDER_EXPIRATION));
+      for(j = 0; j < ArraySize(_ACTIVE_STRATEGIES); j++)
+      {
+         if(Strategy(i, _GET_STRATEGY_NUMBER) != _ACTIVE_STRATEGIES[j])
+            continue;
+
+//if order for this strategy already exists - do not chech this strategy for open         
+         for(k = 0; k < OrdersTotal(); k++)
+         {
+            OrderSelect(k, SELECT_BY_POS);
+            if(OrderMagicNumber() == Strategy(_ACTIVE_STRATEGIES[j], _GET_STRATEGY_MAGICNUMBER))
+            {
+               OrderExists = true;
+               break;
+            }
+         }
+         
+         if(!OrderExists)
+         {
+            if(Strategy(_ACTIVE_STRATEGIES[j], _OPEN_LONG) == 1)
+               OpenPosition(false, Strategy(_ACTIVE_STRATEGIES[j], _GET_LOTS), Strategy(_ACTIVE_STRATEGIES[j], _GET_LONG_STOPLOSS_PRICE), Strategy(_ACTIVE_STRATEGIES[j], _GET_LONG_TAKEPROFIT_PRICE), 3, Strategy(_ACTIVE_STRATEGIES[j], _GET_STRATEGY_MAGICNUMBER));
+            if(Strategy(_ACTIVE_STRATEGIES[j], _OPEN_SHORT) == 1)
+               OpenPosition(true, Strategy(_ACTIVE_STRATEGIES[j], _GET_LOTS), Strategy(_ACTIVE_STRATEGIES[j], _GET_SHORT_STOPLOSS_PRICE), Strategy(_ACTIVE_STRATEGIES[j], _GET_SHORT_TAKEPROFIT_PRICE), 3, Strategy(_ACTIVE_STRATEGIES[j], _GET_STRATEGY_MAGICNUMBER));
+
+            if(Strategy(_ACTIVE_STRATEGIES[j], _OPEN_PENDING_BUY_STOP) == 1)
+               OpenPendingPosition(false, Strategy(_ACTIVE_STRATEGIES[j], _GET_LOTS), Strategy(_ACTIVE_STRATEGIES[j], _GET_PENDING_BUY_STOP_PRICE), Strategy(_ACTIVE_STRATEGIES[j], _GET_LONG_STOPLOSS_PRICE), Strategy(_ACTIVE_STRATEGIES[j], _GET_LONG_TAKEPROFIT_PRICE), 3, Strategy(_ACTIVE_STRATEGIES[j], _GET_STRATEGY_MAGICNUMBER), Strategy(_ACTIVE_STRATEGIES[j], _GET_PENDING_ORDER_EXPIRATION));
+            if(Strategy(_ACTIVE_STRATEGIES[j], _OPEN_PENDING_SELL_STOP) == 1)
+               OpenPendingPosition(true, Strategy(_ACTIVE_STRATEGIES[j], _GET_LOTS), Strategy(_ACTIVE_STRATEGIES[j], _GET_PENDING_SELL_STOP_PRICE), Strategy(_ACTIVE_STRATEGIES[j], _GET_SHORT_STOPLOSS_PRICE), Strategy(_ACTIVE_STRATEGIES[j], _GET_SHORT_TAKEPROFIT_PRICE), 3, Strategy(_ACTIVE_STRATEGIES[j], _GET_STRATEGY_MAGICNUMBER), Strategy(_ACTIVE_STRATEGIES[j], _GET_PENDING_ORDER_EXPIRATION));
+         }
+
+      }
+   }
 
    return(0);
 }
@@ -155,9 +210,9 @@ bool LastBarTraded()
 //------------------------------------------------------------------
 // First tick of a traded timeframe bar
 //------------------------------------------------------------------
-bool OpenNewBar()
+bool OpenNewBar(int _TIMEFRAME)
 {
-   if(iVolume(Symbol(), Strategy(_STRATEGY_NUMBER, _GET_TRADED_TIMEFRAME), 0) > 1)
+   if(iVolume(Symbol(), _TIMEFRAME, 0) > 1)
       return(false);
    else
       return(true);
@@ -170,8 +225,8 @@ bool TradeAllowed(int MAXORDERS)
 //Trade only once on each bar
    if(!IsTradeAllowed()) 
       return(false);
-   if(OrdersTotal() >= MAXORDERS)
-      return(false);
+//   if(OrdersTotal() >= MAXORDERS)
+//      return(false);
    return(true);
 }
 
@@ -233,11 +288,13 @@ void OpenPosition(bool SHORTLONG, double LOTS, double STOPLOSS, double TAKEPROFI
 {
    if(SHORTLONG)
    {
-      OrderSend(Symbol(), OP_SELL, LOTS, Bid, SLIPPAGE, STOPLOSS, TAKEPROFIT, TimeToStr(Time[0]), MAGICNUMBER, 0, Red);
+//      Print(Symbol(), " - ",OP_SELL, " - ", LOTS, " - ", Bid, " - ", SLIPPAGE, " - ", STOPLOSS, " - ", TAKEPROFIT, " - ", StringConcatenate(MAGICNUMBER, ""), " - ", MAGICNUMBER, " - ", 0, " - ", Red);
+      OrderSend(Symbol(), OP_SELL, LOTS, Bid, SLIPPAGE, STOPLOSS, TAKEPROFIT, StringConcatenate(MAGICNUMBER, ""), MAGICNUMBER, 0, Red);
    }
    else
    {
-      OrderSend(Symbol(), OP_BUY, LOTS, Ask, SLIPPAGE, STOPLOSS, TAKEPROFIT, TimeToStr(Time[0]), MAGICNUMBER, 0, Blue);
+//      Print(Symbol(), " - ",  OP_BUY, " - ", LOTS, " - ", Ask, " - ", SLIPPAGE, " - ", STOPLOSS, " - ", TAKEPROFIT, " - ", StringConcatenate(MAGICNUMBER, ""), " - ", MAGICNUMBER, " - ", 0, " - ", Blue);
+      OrderSend(Symbol(), OP_BUY, LOTS, Ask, SLIPPAGE, STOPLOSS, TAKEPROFIT, StringConcatenate(MAGICNUMBER, ""), MAGICNUMBER, 0, Blue);
    }
    
    LastBarTraded = Time[0];
@@ -249,11 +306,11 @@ void OpenPendingPosition(bool SHORTLONG, double LOTS, double OPENPRICE, double S
 {
    if(SHORTLONG)
    {
-      OrderSend(Symbol(), OP_SELLSTOP, LOTS, OPENPRICE, SLIPPAGE, STOPLOSS, TAKEPROFIT, NULL, MAGICNUMBER, EXPIRATION, Red);
+      OrderSend(Symbol(), OP_SELLSTOP, LOTS, OPENPRICE, SLIPPAGE, STOPLOSS, TAKEPROFIT, StringConcatenate(MAGICNUMBER, ""), MAGICNUMBER, EXPIRATION, Red);
    }
    else
    {
-      OrderSend(Symbol(), OP_BUYSTOP, LOTS, OPENPRICE, SLIPPAGE, STOPLOSS, TAKEPROFIT, NULL, MAGICNUMBER, EXPIRATION, Blue);
+      OrderSend(Symbol(), OP_BUYSTOP, LOTS, OPENPRICE, SLIPPAGE, STOPLOSS, TAKEPROFIT, StringConcatenate(MAGICNUMBER, ""), MAGICNUMBER, EXPIRATION, Blue);
    }
    
    LastBarTraded = Time[0];
@@ -306,7 +363,7 @@ void CloseAllPositions(int MAGICNUMBER)
       if(OrderMagicNumber() != MAGICNUMBER)
          continue;
       ArrayResize(OrderTickets2Close, ArraySize(OrderTickets2Close) + 1);
-      OrderTickets2Close[ArraySize(OrderTickets2Close)] = OrderTicket();
+      OrderTickets2Close[ArraySize(OrderTickets2Close) - 1] = OrderTicket();
    }
 
    ClosePositions(OrderTickets2Close);
@@ -667,66 +724,6 @@ double getNthZIGZAGValue(string _SYMBOL, int _TIMEFRAME, bool UpperLower, int Nt
    
    return (result);
 }
-
-
-double getNthZIGZAGValueOld(string _SYMBOL, int _TIMEFRAME, bool UpperLower, int Nth)
-{
-   double   result      = 0;
-   int      i           = 0;
-   int      NthZIGZAG   = Nth;
-   bool     LastZIGZAG  = true;
-      
-   if(UpperLower)
-   {
-      while(i < 1000 && NthZIGZAG > 0)
-      {
-         if(LastZIGZAG)
-         {
-            if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 1, i) > 0 || iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 2, i) > 0)
-               LastZIGZAG = false;
-            i++;
-            continue;
-         }
-
-         result = iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 1, i);
-         
-//         Print("upper:", result);
-         
-         i++;
-         if(result > 0)
-         {
-            NthZIGZAG--;
-            continue;
-         }
-      }
-   }
-   else
-   {
-      while(i < 1000 && NthZIGZAG > 0)
-      {
-         if(LastZIGZAG)
-         {
-            if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 1, i) > 0 || iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 2, i) > 0)
-               LastZIGZAG = false;
-            i++;
-            continue;
-         }
-
-         result = iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 2, i);
-
-//         Print("lower:", result);
-
-         i++;
-         if(result > 0)
-         {
-            NthZIGZAG--;
-            continue;
-         }
-      }
-   }
-   
-   return (result);
-}
 //------------------------------------------------------------------------------------
 // Nth ZIGZAG time
 //------------------------------------------------------------------------------------
@@ -774,62 +771,6 @@ datetime getNthZIGZAGTime(string _SYMBOL, int _TIMEFRAME, bool UpperLower, int N
    
    return(iTime(_SYMBOL, _TIMEFRAME, result));
 }
-
-
-datetime getNthZIGZAGTimeOld(string _SYMBOL, int _TIMEFRAME, bool UpperLower, int Nth)
-{
-   datetime result      = 0;
-   int      i           = 0;
-   int      NthZIGZAG   = Nth;
-   bool     LastZIGZAG  = true;
-      
-   if(UpperLower)
-   {
-      while(i < 1000 && NthZIGZAG > 0)
-      {
-         if(LastZIGZAG)
-         {
-            if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 1, i) > 0 || iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 2, i) > 0)
-               LastZIGZAG = false;
-            i++;
-            continue;
-         }
-
-         i++;
-         if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 1, i) > 0)
-         {
-            NthZIGZAG--;
-            continue;
-         }
-      }
-      
-      return(iTime(_SYMBOL, _TIMEFRAME, i));
-   }
-   else
-   {
-      while(i < 1000 && NthZIGZAG > 0)
-      {
-         if(LastZIGZAG)
-         {
-            if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 1, i) > 0 || iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 2, i) > 0)
-               LastZIGZAG = false;
-            i++;
-            continue;
-         }
-
-         i++;
-         if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 2, i) > 0)
-         {
-            NthZIGZAG--;
-            continue;
-         }
-      }
-
-      return(iTime(_SYMBOL, _TIMEFRAME, i));
-   }
-   
-   return (result);
-}
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
@@ -838,138 +779,94 @@ datetime getNthZIGZAGTimeOld(string _SYMBOL, int _TIMEFRAME, bool UpperLower, in
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //
-double Strategy(int STRATEGY, int COMMAND)
+double Strategy(int _STRATEGY, int _COMMAND)
 {
-   switch(STRATEGY)
-   {
 // Ide o MACD strategiu, kde sa ako vstupne signaly vyhodnocuju MACD z dvoch TIMEFRAME
 // V podstate je mozne kombinovat tuto logiku rozne a aplikovat nezavisle na vstupy a vystupy
-      case 1:
-      {
-         return(Strategy_001(COMMAND));
-      }
+   if(_STRATEGY == Strategy_001(_GET_STRATEGY_NUMBER))
+      return(Strategy_001(_COMMAND));
 // Ide o MACD strategiu, kde sa ako vstupne a vystupne signaly vyhodnocuje MACD iba z jedneho TIMEFRAME - trailng stop
 // pomocou LOW/HIGH predch. baru o adaptivnej velkosti podla prveho SL
-      case 2:
-      {
-         return(Strategy_002(COMMAND));
-      }
+   if(_STRATEGY == Strategy_002(_GET_STRATEGY_NUMBER))
+      return(Strategy_002(_COMMAND));
 // Ide o MACD strategiu, kde sa ako vstupne a vystupne signaly vyhodnocuje MACD iba z jedneho TIMEFRAME - trailng stop
 // pomocou LOW/HIGH predch. baru o adaptivnej velkosti podla prveho SL - rozne vstupne strategie za ucelom zvysenia efektivity
-      case 3:
-      {
-         return(Strategy_003(COMMAND));
-      }
+   if(_STRATEGY == Strategy_003(_GET_STRATEGY_NUMBER))
+      return(Strategy_003(_COMMAND));
 // Ide o MACD strategiu, kde sa ako vstupne signaly vyhodnocuje MACD iba z jedneho TIMEFRAME - trailng stop
 // pomocou LOW/HIGH predch. baru o adaptivnej velkosti podla prveho SL - rozne vystupne strategie za ucelom zvysenia efektivity
-      case 4:
-      {
-         return(Strategy_004(COMMAND));
-      }
+   if(_STRATEGY == Strategy_004(_GET_STRATEGY_NUMBER))
+      return(Strategy_004(_COMMAND));
 // Ide o strategiu zachytenia trendu nestandardnymi metodami na urovni sviecok, prerazeni, naslednych neustale stupajucich/klesajucich  open/close atd
 // vystupy su taktiez riadene podobnymi metodami 
-      case 5:
-      {
-         return(Strategy_005(COMMAND));
-      }
+   if(_STRATEGY == Strategy_005(_GET_STRATEGY_NUMBER))
+      return(Strategy_005(_COMMAND));
 // Ide o strategiu dvoch MA s blizkou periodou - otvorenie/uzavretie pozicie pri prekrizeni dvoch MA
 // Podporena je dlhym MA - ak je cena nad iba kupovat a opacne
 // este su vstupy filtrovane pomocou MACD
-      case 6:
-      {
-         return(Strategy_006(COMMAND));
-      }
+   if(_STRATEGY == Strategy_006(_GET_STRATEGY_NUMBER))
+      return(Strategy_006(_COMMAND));
 // Strategia vstupov len pri prekrizeni
-      case 7:
-      {
-         return(Strategy_007(COMMAND));
-      }
+   if(_STRATEGY == Strategy_007(_GET_STRATEGY_NUMBER))
+      return(Strategy_007(_COMMAND));
 // Strategia SL a trailing stop podla fractals
 // rozne vstupne strategie - filtrovanie pomocou roznych technik
-      case 8:
-      {
-         return(Strategy_008(COMMAND));
-      }
+   if(_STRATEGY == Strategy_008(_GET_STRATEGY_NUMBER))
+      return(Strategy_008(_COMMAND));
 // kombinacie vstupov zo strategie 1 a stoploss zo strategie 8
-      case 9:
-      {
-         return(Strategy_009(COMMAND));
-      }
+   if(_STRATEGY == Strategy_009(_GET_STRATEGY_NUMBER))
+      return(Strategy_009(_COMMAND));
 // fraktaly pre vstup, stop trailing aj vystup
-      case 10:
-      {
-         return(Strategy_010(COMMAND));
-      }
+   if(_STRATEGY == Strategy_010(_GET_STRATEGY_NUMBER))
+      return(Strategy_010(_COMMAND));
 // 
-      case 11:
-      {
-         return(Strategy_011(COMMAND));
-      }
+   if(_STRATEGY == Strategy_011(_GET_STRATEGY_NUMBER))
+      return(Strategy_011(_COMMAND));
 // fraktaly - macd - support/resistance levels z rovnakych aj vyssich timeframes podporene macd
-      case 12:
-      {
-         return(Strategy_012(COMMAND));
-      }
+   if(_STRATEGY == Strategy_012(_GET_STRATEGY_NUMBER))
+      return(Strategy_012(_COMMAND));
 // pure macd neustale v trhu
-      case 13:
-      {
-         return(Strategy_013(COMMAND));
-      }
+   if(_STRATEGY == Strategy_013(_GET_STRATEGY_NUMBER))
+      return(Strategy_013(_COMMAND));
 // fraktaly ako smernice pre suuport a resistance a ich prerazenie
-      case 14:
-      {
-         return(Strategy_014(COMMAND));
-      }
+   if(_STRATEGY == Strategy_014(_GET_STRATEGY_NUMBER))
+      return(Strategy_014(_COMMAND));
 // denne sviecky - hladanie vnutornej sviecky - nerozhodnost trhu - umietnenie pending order nad/pod high/low vcerajsej sviecky a cakanie na prieraz
-      case 15:
-      {
-         return(Strategy_015(COMMAND));
-      }
+   if(_STRATEGY == Strategy_015(_GET_STRATEGY_NUMBER))
+      return(Strategy_015(_COMMAND));
 // modifikacia predosleho systemu - nie pending orders ale market, aby bolo mozne pouzit aj nizsie timeframes
-      case 16:
-      {
-         return(Strategy_016(COMMAND));
-      }
+   if(_STRATEGY == Strategy_016(_GET_STRATEGY_NUMBER))
+      return(Strategy_016(_COMMAND));
 // gap trading - medzi dnami/tyzdnami - gap sa zvykne zaplnit
 // je dobre pockat na support - resistance aby sme mali pevny spodok - strop
-      case 17:
-      {
-         return(Strategy_017(COMMAND));
-      }
+   if(_STRATEGY == Strategy_017(_GET_STRATEGY_NUMBER))
+      return(Strategy_017(_COMMAND));
 // Malo by to byt o fraktaloch, resp. ZIGZAG indikatore
 // tato strategia pracuje s uhlami, periodou a dlzkami ZIGZAG indikatora
-      case 18:
-      {
-         return(Strategy_018(COMMAND));
-      }
+   if(_STRATEGY == Strategy_018(_GET_STRATEGY_NUMBER))
+      return(Strategy_018(_COMMAND));
 // ZIGZAG + Bollinger Bands
 // uhol spojnice ZIGZAG opacneho vrchola a dotycnice k BB - ak je vacsi -> place order
-      case 19:
-      {
-         return(Strategy_019(COMMAND));
-      }
+   if(_STRATEGY == Strategy_019(_GET_STRATEGY_NUMBER))
+      return(Strategy_019(_COMMAND));
 // ZIGZAG pokus na viacerych timeframe
-      case 20:
-      {
-         return(Strategy_020(COMMAND));
-      }
+   if(_STRATEGY == Strategy_020(_GET_STRATEGY_NUMBER))
+      return(Strategy_020(_COMMAND));
 // ZIGZAG spojnice vrcholov su supporty/resistance - ich prerazenie by malo vytvorit trend
-      case 21:
-      {
-         return(Strategy_021(COMMAND));
-      }
+   if(_STRATEGY == Strategy_021(_GET_STRATEGY_NUMBER))
+      return(Strategy_021(_COMMAND));
 // ZIGZAG spojnice vrcholov su supporty/resistance - odrazenie od nich je pravdepodobne
-      case 22:
-      {
-         return(Strategy_022(COMMAND));
-      }
-   }
+   if(_STRATEGY == Strategy_022(_GET_STRATEGY_NUMBER))
+      return(Strategy_022(_COMMAND));
 
    return(0);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_001(int COMMAND)
+double Strategy_001(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 1;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+   
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = PERIOD_H1;
    int      _TIMEFRAME_2   = PERIOD_H1;
@@ -986,7 +883,7 @@ double Strategy_001(int COMMAND)
    double   MACDHistogram, MACDHistogram2;
    double   MACDSignal, MACDSignal2;
    
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -1088,11 +985,11 @@ double Strategy_001(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(int i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -1118,13 +1015,26 @@ double Strategy_001(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_002(int COMMAND)
+double Strategy_002(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 2;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = Period();
    int      _SLOWEMA       = 26;
@@ -1140,7 +1050,7 @@ double Strategy_002(int COMMAND)
    double   MACDHistogram;
    double   MACDSignal;
    
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -1220,16 +1130,17 @@ double Strategy_002(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         if(OrdersTotal() == 1)
+         for(int i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+            
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
                {
-                  int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                  i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
                   
                   double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
                   double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
@@ -1281,13 +1192,26 @@ double Strategy_002(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_003(int COMMAND)
+double Strategy_003(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 3;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = Period();
    int      _SLOWEMA       = 26;
@@ -1303,7 +1227,7 @@ double Strategy_003(int COMMAND)
    double   MACDHistogram;
    double   MACDSignal;
    
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -1385,16 +1309,17 @@ double Strategy_003(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         if(OrdersTotal() == 1)
+         for(int i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
                {
-                  int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                  i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
                   
                   double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
                   double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
@@ -1446,13 +1371,26 @@ double Strategy_003(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_004(int COMMAND)
+double Strategy_004(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 4;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = Period();
    int      _SLOWEMA       = 26;
@@ -1466,7 +1404,7 @@ double Strategy_004(int COMMAND)
    double   MACDHistogram;
    double   MACDSignal;
       
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -1530,13 +1468,26 @@ double Strategy_004(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_005(int COMMAND)
+double Strategy_005(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 5;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = Period();
    int      _SLOWEMA       = 26;
@@ -1554,7 +1505,7 @@ double Strategy_005(int COMMAND)
    double   MACDHistogram;
    double   MACDSignal;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -1650,16 +1601,17 @@ double Strategy_005(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         if(OrdersTotal() == 1)
+         for(int i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
                {
-                  int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                  i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
                   
                   double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
                   double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
@@ -1711,13 +1663,26 @@ double Strategy_005(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_006(int COMMAND)
+double Strategy_006(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 6;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = Period();
    int      _SLOWEMA       = 26;
@@ -1739,7 +1704,7 @@ double Strategy_006(int COMMAND)
    double   MACDHistogram;
    double   MACDSignal;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -1839,16 +1804,17 @@ double Strategy_006(int COMMAND)
       {
          break;
 
-         if(OrdersTotal() == 1)
+         for(int i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
                {
-                  int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                  i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
                   
                   double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
                   double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
@@ -1901,13 +1867,26 @@ double Strategy_006(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_007(int COMMAND)
+double Strategy_007(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 7;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = Period();
    int      _SLOWEMA       = 26;
@@ -1935,7 +1914,7 @@ double Strategy_007(int COMMAND)
 
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -2063,11 +2042,12 @@ double Strategy_007(int COMMAND)
       {
 //         break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2110,13 +2090,26 @@ double Strategy_007(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_008(int COMMAND)
+double Strategy_008(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 8;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = Period();
    int      _SLOWEMA       = 26;
@@ -2144,7 +2137,7 @@ double Strategy_008(int COMMAND)
 
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -2206,11 +2199,12 @@ double Strategy_008(int COMMAND)
       {         
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2225,11 +2219,12 @@ double Strategy_008(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2246,11 +2241,12 @@ double Strategy_008(int COMMAND)
       {
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -2265,11 +2261,12 @@ double Strategy_008(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -2318,11 +2315,12 @@ double Strategy_008(int COMMAND)
       {
 //         break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2354,11 +2352,12 @@ double Strategy_008(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2374,11 +2373,12 @@ double Strategy_008(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2417,13 +2417,26 @@ double Strategy_008(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_009(int COMMAND)
+double Strategy_009(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 9;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = PERIOD_M30;
    int      _TIMEFRAME_2   = PERIOD_H1;
@@ -2454,7 +2467,7 @@ double Strategy_009(int COMMAND)
 
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -2540,11 +2553,12 @@ double Strategy_009(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2557,11 +2571,12 @@ double Strategy_009(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2575,11 +2590,12 @@ double Strategy_009(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2596,11 +2612,12 @@ double Strategy_009(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -2613,11 +2630,12 @@ double Strategy_009(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -2631,11 +2649,12 @@ double Strategy_009(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -2684,11 +2703,12 @@ double Strategy_009(int COMMAND)
       {
 //         break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
 //            if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2722,11 +2742,12 @@ double Strategy_009(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2742,11 +2763,12 @@ double Strategy_009(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2785,13 +2807,26 @@ double Strategy_009(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_010(int COMMAND)
+double Strategy_010(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 10;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = Period();
    int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
@@ -2822,7 +2857,7 @@ double Strategy_010(int COMMAND)
 
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -2968,11 +3003,12 @@ double Strategy_010(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -2986,11 +3022,12 @@ double Strategy_010(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3003,11 +3040,12 @@ double Strategy_010(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3068,11 +3106,12 @@ double Strategy_010(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -3086,11 +3125,12 @@ double Strategy_010(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -3103,11 +3143,12 @@ double Strategy_010(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -3159,11 +3200,12 @@ double Strategy_010(int COMMAND)
          double breakeven = 0;
          
 /*
-         if(OrdersTotal() == 1)
+         for(int i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3192,11 +3234,11 @@ double Strategy_010(int COMMAND)
          }
 */
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
 //            if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3236,11 +3278,12 @@ double Strategy_010(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3256,11 +3299,12 @@ double Strategy_010(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3299,13 +3343,26 @@ double Strategy_010(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_011(int COMMAND)
+double Strategy_011(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 11;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
 //   int      _TIMEFRAME     = _TIMEFRAME;
@@ -3342,7 +3399,7 @@ double Strategy_011(int COMMAND)
 
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -3528,11 +3585,12 @@ double Strategy_011(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3546,11 +3604,12 @@ double Strategy_011(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3563,11 +3622,12 @@ double Strategy_011(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3635,11 +3695,12 @@ double Strategy_011(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -3653,11 +3714,12 @@ double Strategy_011(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -3670,11 +3732,12 @@ double Strategy_011(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -3726,11 +3789,12 @@ double Strategy_011(int COMMAND)
          double breakeven = 0;
          
 /*
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3759,11 +3823,12 @@ double Strategy_011(int COMMAND)
          }
 */
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
 //            if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3803,11 +3868,12 @@ double Strategy_011(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+               
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3823,11 +3889,12 @@ double Strategy_011(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -3866,13 +3933,26 @@ double Strategy_011(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_012(int COMMAND)
+double Strategy_012(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 12;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
 //   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _TIMEFRAME     = _TIMEFRAME;
@@ -3911,7 +3991,7 @@ double Strategy_012(int COMMAND)
 
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -4106,11 +4186,12 @@ double Strategy_012(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4124,11 +4205,12 @@ double Strategy_012(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4141,11 +4223,12 @@ double Strategy_012(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4213,11 +4296,12 @@ double Strategy_012(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -4231,11 +4315,12 @@ double Strategy_012(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -4248,11 +4333,12 @@ double Strategy_012(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -4304,11 +4390,12 @@ double Strategy_012(int COMMAND)
          double breakeven = 0;
          
 /*
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4337,11 +4424,12 @@ double Strategy_012(int COMMAND)
          }
 */
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4381,11 +4469,12 @@ double Strategy_012(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4401,11 +4490,12 @@ double Strategy_012(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4444,13 +4534,26 @@ double Strategy_012(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_013(int COMMAND)
+double Strategy_013(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 13;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
 //   int      _TIMEFRAME     = _TIMEFRAME;
@@ -4489,12 +4592,12 @@ double Strategy_013(int COMMAND)
 
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
 //         _PRICE = PRICE_LOW;
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             return(0);
          
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -4565,7 +4668,7 @@ double Strategy_013(int COMMAND)
       case _OPEN_SHORT:
       {
 //         _PRICE = PRICE_HIGH;
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             return(0);
          
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -4636,7 +4739,7 @@ double Strategy_013(int COMMAND)
       case _CLOSE_LONG:
       {
 //         break;
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             return(0);
          
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -4690,11 +4793,12 @@ double Strategy_013(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4708,11 +4812,12 @@ double Strategy_013(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4725,11 +4830,12 @@ double Strategy_013(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4745,7 +4851,7 @@ double Strategy_013(int COMMAND)
       case _CLOSE_SHORT:
       {
 //         break;
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             return(0);
 
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -4799,11 +4905,12 @@ double Strategy_013(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -4817,11 +4924,12 @@ double Strategy_013(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -4834,11 +4942,12 @@ double Strategy_013(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -4890,11 +4999,12 @@ double Strategy_013(int COMMAND)
          double breakeven = 0;
          
 /*
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4923,11 +5033,12 @@ double Strategy_013(int COMMAND)
          }
 */
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4967,11 +5078,12 @@ double Strategy_013(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -4987,11 +5099,12 @@ double Strategy_013(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -5030,13 +5143,26 @@ double Strategy_013(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_014(int COMMAND)
+double Strategy_014(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 14;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _TIMEFRAME_2   = _TIMEFRAME;
@@ -5091,11 +5217,11 @@ double Strategy_014(int COMMAND)
    
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
 /*         
@@ -5171,7 +5297,7 @@ double Strategy_014(int COMMAND)
       }
       case _OPEN_SHORT:
       {
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 /*
          MAFast = iMA(_SYMBOL, _TIMEFRAME, _FASTMA, 0, _MAMETHOD, _PRICE, _SHIFT);
@@ -5255,7 +5381,7 @@ double Strategy_014(int COMMAND)
       }
       case _CLOSE_LONG:
       {
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          break;
@@ -5272,11 +5398,12 @@ double Strategy_014(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -5290,11 +5417,12 @@ double Strategy_014(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -5307,11 +5435,12 @@ double Strategy_014(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -5326,7 +5455,7 @@ double Strategy_014(int COMMAND)
       }
       case _CLOSE_SHORT:
       {
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          break;
@@ -5343,11 +5472,12 @@ double Strategy_014(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -5361,11 +5491,12 @@ double Strategy_014(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -5378,11 +5509,12 @@ double Strategy_014(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -5437,18 +5569,19 @@ double Strategy_014(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
 //         break;
 
          double breakeven = 0;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -5470,11 +5603,12 @@ double Strategy_014(int COMMAND)
             }
          }
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
 //            if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -5514,11 +5648,12 @@ double Strategy_014(int COMMAND)
       {
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -5534,11 +5669,12 @@ double Strategy_014(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -5577,13 +5713,26 @@ double Strategy_014(int COMMAND)
          result = _TIMEFRAME;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_015(int COMMAND)
+double Strategy_015(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 15;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
       
@@ -5593,7 +5742,7 @@ double Strategy_015(int COMMAND)
    
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
@@ -5605,7 +5754,7 @@ double Strategy_015(int COMMAND)
       }
       case _OPEN_PENDING_BUY_STOP:
       {
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          if(High[1] < High[2])
@@ -5619,7 +5768,7 @@ double Strategy_015(int COMMAND)
       }
       case _OPEN_PENDING_SELL_STOP:
       {
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          if(High[1] < High[2])
@@ -5651,7 +5800,7 @@ double Strategy_015(int COMMAND)
       {
 //         break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          result = 1;
@@ -5662,7 +5811,7 @@ double Strategy_015(int COMMAND)
       {
 //         break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          result = 1;
@@ -5701,7 +5850,7 @@ double Strategy_015(int COMMAND)
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
          
          break;
@@ -5726,13 +5875,26 @@ double Strategy_015(int COMMAND)
          result = iTime(_SYMBOL, _TIMEFRAME, 0) + _TIMEFRAME*60;
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_016(int COMMAND)
+double Strategy_016(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 16;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _SLOWEMA       = 26;
@@ -5749,11 +5911,11 @@ double Strategy_016(int COMMAND)
    
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
@@ -6172,7 +6334,7 @@ double Strategy_016(int COMMAND)
       }
       case _OPEN_SHORT:
       {
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
@@ -6628,11 +6790,12 @@ double Strategy_016(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(High[2] > High[1])
@@ -6651,11 +6814,12 @@ double Strategy_016(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(Low[2] < Low[1])
@@ -6699,16 +6863,17 @@ double Strategy_016(int COMMAND)
       {
          break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
          double breakeven = 0;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -6730,11 +6895,12 @@ double Strategy_016(int COMMAND)
             }
          }
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -6795,13 +6961,26 @@ double Strategy_016(int COMMAND)
 
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_017(int COMMAND)
+double Strategy_017(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 17;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
          
@@ -6809,13 +6988,13 @@ double Strategy_017(int COMMAND)
    
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
          if(iVolume(Symbol(), PERIOD_W1, 0) == 1)
 
@@ -6833,7 +7012,7 @@ double Strategy_017(int COMMAND)
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
          if(iVolume(Symbol(), PERIOD_W1, 0) == 1)
             
@@ -6922,13 +7101,26 @@ double Strategy_017(int COMMAND)
       {
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_018(int COMMAND)
+double Strategy_018(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 18;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
          
@@ -6936,13 +7128,13 @@ double Strategy_018(int COMMAND)
    
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
          break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
             result = 1;
@@ -6953,7 +7145,7 @@ double Strategy_018(int COMMAND)
       {
          break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
             result = 1;
@@ -7032,13 +7224,26 @@ double Strategy_018(int COMMAND)
       {
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_019(int COMMAND)
+double Strategy_019(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 19;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
          
@@ -7051,13 +7256,13 @@ double Strategy_019(int COMMAND)
    double   BBTop;
    double   BBBottom;
    
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
          break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          ZZLastTop = iCustom(Symbol(), _TIMEFRAME, "ZigZag", 1, 0);
@@ -7075,7 +7280,7 @@ double Strategy_019(int COMMAND)
       {
          break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          ZZLastTop = iCustom(Symbol(), _TIMEFRAME, "ZigZag", 1, 0);
@@ -7159,13 +7364,26 @@ double Strategy_019(int COMMAND)
       {
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_020(int COMMAND)
+double Strategy_020(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 20;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
          
@@ -7173,13 +7391,13 @@ double Strategy_020(int COMMAND)
    
    int      i;
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
 //         break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          Print(1, iCustom(Symbol(), _TIMEFRAME, "ZigZag", 1, 1));
@@ -7199,7 +7417,7 @@ double Strategy_020(int COMMAND)
       {
 //         break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
          Print(5, iCustom(Symbol(), _TIMEFRAME, "ZigZag", 2, 1));
@@ -7295,13 +7513,26 @@ double Strategy_020(int COMMAND)
       {
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_021(int COMMAND)
+double Strategy_021(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 21;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
          
@@ -7330,13 +7561,13 @@ double Strategy_021(int COMMAND)
 
 //   Print(_TIMEFRAME);
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
          UpperZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
@@ -7378,7 +7609,7 @@ double Strategy_021(int COMMAND)
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
          LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
@@ -7420,14 +7651,15 @@ double Strategy_021(int COMMAND)
       {
          break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
 //               if(iCCI(_SYMBOL, _TIMEFRAME, 14, PRICE_CLOSE, 1) < 100)
@@ -7438,11 +7670,12 @@ double Strategy_021(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
@@ -7465,11 +7698,12 @@ double Strategy_021(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -7482,11 +7716,12 @@ double Strategy_021(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -7503,14 +7738,15 @@ double Strategy_021(int COMMAND)
       {
          break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
 //               if(iCCI(_SYMBOL, _TIMEFRAME, 14, PRICE_CLOSE, 1) > -100)
@@ -7521,11 +7757,12 @@ double Strategy_021(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
@@ -7548,11 +7785,12 @@ double Strategy_021(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -7565,11 +7803,12 @@ double Strategy_021(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -7626,11 +7865,11 @@ double Strategy_021(int COMMAND)
       {
 //         break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
 
 //            if(OrderProfit() > 0)
             {
@@ -7667,13 +7906,26 @@ double Strategy_021(int COMMAND)
       {
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
 //------------------------------------------------------------------//------------------------------------------------------------------
-double Strategy_022(int COMMAND)
+double Strategy_022(int _COMMAND)
 {
+   int      _STRATEGY_NUMBER  = 22;
+   int      _MAGICNUMBER      = _STRATEGY_NUMBER;
+
    string   _SYMBOL        = Symbol();
    int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
          
@@ -7702,13 +7954,13 @@ double Strategy_022(int COMMAND)
 
 //   Print(_TIMEFRAME);
 
-   switch(COMMAND)
+   switch(_COMMAND)
    {
       case _OPEN_LONG:
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
          LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
@@ -7751,7 +8003,7 @@ double Strategy_022(int COMMAND)
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
          UpperZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
@@ -7794,14 +8046,15 @@ double Strategy_022(int COMMAND)
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
 //            if(OrderProfit() > 0)
             {
                if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 0, 0) > 0)
@@ -7811,14 +8064,15 @@ double Strategy_022(int COMMAND)
 
          break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
 //               if(iCCI(_SYMBOL, _TIMEFRAME, 14, PRICE_CLOSE, 1) < 100)
@@ -7829,11 +8083,12 @@ double Strategy_022(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(iHigh(_SYMBOL, _TIMEFRAME, 2) > iHigh(_SYMBOL, _TIMEFRAME, 1))
@@ -7856,11 +8111,12 @@ double Strategy_022(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -7873,11 +8129,12 @@ double Strategy_022(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_BUY)
@@ -7894,14 +8151,15 @@ double Strategy_022(int COMMAND)
       {
 //         break;
 
-//         if(!OpenNewBar())
+//         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
 //            if(OrderProfit() > 0)
             {
                if(iCustom(_SYMBOL, _TIMEFRAME, "ZigZag", 12, 5, 3, 0, 0) > 0)
@@ -7911,14 +8169,15 @@ double Strategy_022(int COMMAND)
 
          break;
 
-         if(!OpenNewBar())
+         if(!OpenNewBar(_TIMEFRAME))
             break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
 //               if(iCCI(_SYMBOL, _TIMEFRAME, 14, PRICE_CLOSE, 1) > -100)
@@ -7929,11 +8188,12 @@ double Strategy_022(int COMMAND)
 
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(iLow(_SYMBOL, _TIMEFRAME, 2) < iLow(_SYMBOL, _TIMEFRAME, 1))
@@ -7956,11 +8216,12 @@ double Strategy_022(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -7973,11 +8234,12 @@ double Strategy_022(int COMMAND)
 
          break;
          
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
+
             if(OrderProfit() > 0)
             {
                if(OrderType() == OP_SELL)
@@ -8036,11 +8298,11 @@ double Strategy_022(int COMMAND)
       {
          break;
 
-         if(OrdersTotal() == 1)
+         for(i = 0; i < OrdersTotal(); i++)
          {
-            OrderSelect(0, SELECT_BY_POS);
+            OrderSelect(i, SELECT_BY_POS);
             if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
+               continue;
 
 //            if(OrderProfit() > 0)
             {
@@ -8077,8 +8339,17 @@ double Strategy_022(int COMMAND)
       {
          break;
       }
+      case _GET_STRATEGY_NUMBER:
+      {
+         result = _STRATEGY_NUMBER;
+         break;
+      }
+      case _GET_STRATEGY_MAGICNUMBER:
+      {
+         result = _MAGICNUMBER;
+         break;
+      }
    }
       
    return(result);
 }
-
