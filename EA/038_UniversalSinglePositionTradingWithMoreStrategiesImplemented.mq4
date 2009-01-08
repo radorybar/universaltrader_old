@@ -13,6 +13,9 @@
 //------------------------------------------------------------------
 int   _STRATEGY_NUMBER              = 2;
 
+int   _MIN_STOPLOSS_DISTANCE        = 10;
+int   _MIN_TAKEPROFIT_DISTANCE      = 10;
+
 // 1 - PERIOD_M1
 // 2 - PERIOD_M5
 // 3 - PERIOD_M15
@@ -29,8 +32,10 @@ extern string  poznamka2 = "1 - vyber timeframe podla kodu timeframe 1 - 9";
 extern int     _STRATEGY_TIMEFRAME_CHOICE    = 1;
 extern int     _STRATEGY_TIMEFRAME           = 1;
 
-extern int     _OPEN_SIGNAL_COMBINATION      = 1;
-extern int     _CLOSE_SIGNAL_COMBINATION     = 1;
+extern int     _OPEN_SIGNAL_COMBINATION      = 1;  //2
+extern int     _CLOSE_SIGNAL_COMBINATION     = 1;  //4
+extern int     _STOPLOSS_COMBINATION         = 1;  //2
+extern int     _TRAILING_STOPLOSS_COMBINATION= 1;  //2
 
 int     _SIGNAL_COMBINATION           = 1;
 
@@ -90,6 +95,9 @@ int   LONGMA = 140;
 //------------------------------------------------------------------
 int init()
 {
+   _MIN_STOPLOSS_DISTANCE           = MarketInfo(Symbol(), MODE_STOPLEVEL);
+   _MIN_TAKEPROFIT_DISTANCE         = MarketInfo(Symbol(), MODE_STOPLEVEL);
+
    return(0);
 }
 int deinit()
@@ -1288,7 +1296,7 @@ double Strategy_001(int COMMAND)
 double Strategy_002(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
    int      _MASIGNAL      = 9;
@@ -1323,6 +1331,7 @@ double Strategy_002(int COMMAND)
                   result = 1;
                break;
             }
+         }
          
          break;
       }
@@ -1345,7 +1354,8 @@ double Strategy_002(int COMMAND)
                   result = 1;
                break;
             }
-
+         }
+         
          break;
       }
       case _CLOSE_LONG:
@@ -1424,7 +1434,6 @@ double Strategy_002(int COMMAND)
          switch(_STOPLOSS_COMBINATION)
          {
             case 1:
-            case 1:
             {
                result = iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, 1);
                break;
@@ -1436,9 +1445,6 @@ double Strategy_002(int COMMAND)
             }
          }
 
-         if(result > Ask - 10*Point)
-            result = Ask - 10*Point;
-
          break;
       }
       case _GET_LONG_TAKEPROFIT_PRICE:
@@ -1447,12 +1453,20 @@ double Strategy_002(int COMMAND)
       }
       case _GET_SHORT_STOPLOSS_PRICE:
       {
-//         result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, 1);
-         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, 1);
+               break;
+            }
+            case 2:
+            {
+               result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+         }
 
-         if(result < Bid + 10*Point)
-            result = Bid + 10*Point;
-         
          break;
       }
       case _GET_SHORT_TAKEPROFIT_PRICE:
@@ -1461,48 +1475,60 @@ double Strategy_002(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         if(OrdersTotal() == 1)
+         switch(_TRAILING_STOPLOSS_COMBINATION)
          {
-            OrderSelect(0, SELECT_BY_POS);
-            if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
-            if(OrderProfit() > 0)
+            case 1:
             {
-               if(OrderType() == OP_BUY)
+               break;
+            }
+            case 2:
+            {
+               if(OrdersTotal() == 1)
                {
-                  int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                  OrderSelect(0, SELECT_BY_POS);
+                  if(OrderMagicNumber() != _MAGICNUMBER)
+                     break;
+                  if(OrderProfit() > 0)
+                  {
+                     if(OrderType() == OP_BUY)
+                     {
+                        int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
                   
-                  double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
-                  double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
+                        double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
+                        double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
 
-                  if(Low1SL < Low2SL)
-                     result = Low1SL;
-                  else
-                     result = Low2SL;
+                        if(Low1SL < Low2SL)
+                           result = Low1SL;
+                        else
+                           result = Low2SL;
                   
-                  if(result > Bid - 10*Point)
-                     result = Bid - 10*Point;
+                        if(result > Bid - 10*Point)
+                           result = Bid - 10*Point;
                   
-                  if(result <= OrderStopLoss())
-                     result = 0;                  
-               }
-               else
-               {
-                  int j = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                        if(result <= OrderStopLoss())
+                           result = 0;                  
+                     }
+                     else
+                     {
+                        int j = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
 
-                  double High1SL = iHigh(_SYMBOL, _TIMEFRAME, 1);
-                  double High2SL = Ask + MathAbs(iHigh(_SYMBOL, _TIMEFRAME, j + 1) - OrderOpenPrice());
+                        double High1SL = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                        double High2SL = Ask + MathAbs(iHigh(_SYMBOL, _TIMEFRAME, j + 1) - OrderOpenPrice());
                   
-                  if(High1SL > High2SL)
-                     result = High1SL;
-                  else
-                     result = High2SL;
+                        if(High1SL > High2SL)
+                           result = High1SL;
+                        else
+                           result = High2SL;
                   
-                  if(result < Ask + 10*Point)
-                     result = Ask + 10*Point;
-                  if(result >= OrderStopLoss())
-                     result = 0;
+                        if(result < Ask + 10*Point)
+                           result = Ask + 10*Point;
+                        if(result >= OrderStopLoss())
+                           result = 0;
+                     }
+                  }
                }
+
+               break;
             }
          }
          
