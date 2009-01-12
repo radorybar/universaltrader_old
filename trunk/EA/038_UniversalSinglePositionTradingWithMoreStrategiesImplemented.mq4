@@ -11,7 +11,7 @@
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
-int   _STRATEGY_NUMBER              = 16;
+int   _STRATEGY_NUMBER              = 23;
 
 int   _MIN_STOPLOSS_DISTANCE        = 10;
 int   _MIN_TAKEPROFIT_DISTANCE      = 10;
@@ -29,7 +29,7 @@ int   _MIN_TAKEPROFIT_DISTANCE      = 10;
 // _STRATEGY_TIMEFRAME_CHOICE
 extern string  poznamka1 = "0 - vyber timeframe podla dropdown menu - premenna _STRATEGY_TIMEFRAME sa ignoruje";
 extern string  poznamka2 = "1 - vyber timeframe podla kodu timeframe 1 - 9";
-extern int     _STRATEGY_TIMEFRAME_CHOICE    = 1;
+extern int     _STRATEGY_TIMEFRAME_CHOICE    = 0;
 extern int     _STRATEGY_TIMEFRAME           = 1;
 
 extern int     _OPEN_SIGNAL_COMBINATION      = 1;  //27
@@ -1029,6 +1029,11 @@ double Strategy(int STRATEGY, int COMMAND)
       case 22:
       {
          return(Strategy_022(COMMAND));
+      }
+// ZIGZAG vrcholy su S/R urovne
+      case 23:
+      {
+         return(Strategy_023(COMMAND));
       }
    }
 
@@ -9623,15 +9628,15 @@ double Strategy_020(int COMMAND)
          if(!OpenNewBar(_TIMEFRAME))
             break;
 
-         Print(1, iCustom(Symbol(), _TIMEFRAME, "ZigZag", 1, 1));
-         Print(2, iCustom(Symbol(), HigherTimeframe(_TIMEFRAME), "ZigZag", 1, 1));
-         Print(3, iCustom(Symbol(), HigherTimeframe(HigherTimeframe(_TIMEFRAME)), "ZigZag", 1, 1));
-         Print(4, iCustom(Symbol(), HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME))), "ZigZag", 1, 1));
+//         Print(1, iCustom(Symbol(), _TIMEFRAME, "ZigZag", 1, 1));
+//         Print(2, iCustom(Symbol(), HigherTimeframe(_TIMEFRAME), "ZigZag", 1, 1));
+//         Print(3, iCustom(Symbol(), HigherTimeframe(HigherTimeframe(_TIMEFRAME)), "ZigZag", 1, 1));
+//         Print(4, iCustom(Symbol(), HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME))), "ZigZag", 1, 1));
 
          if(Ask > iCustom(Symbol(), _TIMEFRAME, "ZigZag", 1, 0))
-         if(Ask > iCustom(Symbol(), HigherTimeframe(_TIMEFRAME), "ZigZag", 1, 0))
-         if(Ask > iCustom(Symbol(), HigherTimeframe(HigherTimeframe(_TIMEFRAME)), "ZigZag", 1, 0))
-         if(Ask > iCustom(Symbol(), HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME))), "ZigZag", 1, 0))
+//         if(Ask > iCustom(Symbol(), HigherTimeframe(_TIMEFRAME), "ZigZag", 1, 0))
+//         if(Ask > iCustom(Symbol(), HigherTimeframe(HigherTimeframe(_TIMEFRAME)), "ZigZag", 1, 0))
+//         if(Ask > iCustom(Symbol(), HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME))), "ZigZag", 1, 0))
             result = 1;
 
          break;
@@ -9643,15 +9648,15 @@ double Strategy_020(int COMMAND)
          if(!OpenNewBar(_TIMEFRAME))
             break;
 
-         Print(5, iCustom(Symbol(), _TIMEFRAME, "ZigZag", 2, 1));
-         Print(6, iCustom(Symbol(), HigherTimeframe(_TIMEFRAME), "ZigZag", 2, 1));
-         Print(7, iCustom(Symbol(), HigherTimeframe(HigherTimeframe(_TIMEFRAME)), "ZigZag", 2, 1));
-         Print(8, iCustom(Symbol(), HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME))), "ZigZag", 2, 1));
+//         Print(5, iCustom(Symbol(), _TIMEFRAME, "ZigZag", 2, 1));
+//         Print(6, iCustom(Symbol(), HigherTimeframe(_TIMEFRAME), "ZigZag", 2, 1));
+//         Print(7, iCustom(Symbol(), HigherTimeframe(HigherTimeframe(_TIMEFRAME)), "ZigZag", 2, 1));
+//         Print(8, iCustom(Symbol(), HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME))), "ZigZag", 2, 1));
 
          if(Bid < iCustom(Symbol(), _TIMEFRAME, "ZigZag", 2, 0))
-         if(Bid < iCustom(Symbol(), HigherTimeframe(_TIMEFRAME), "ZigZag", 2, 0))
-         if(Bid < iCustom(Symbol(), HigherTimeframe(HigherTimeframe(_TIMEFRAME)), "ZigZag", 2, 0))
-         if(Bid < iCustom(Symbol(), HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME))), "ZigZag", 2, 0))
+//         if(Bid < iCustom(Symbol(), HigherTimeframe(_TIMEFRAME), "ZigZag", 2, 0))
+//         if(Bid < iCustom(Symbol(), HigherTimeframe(HigherTimeframe(_TIMEFRAME)), "ZigZag", 2, 0))
+//         if(Bid < iCustom(Symbol(), HigherTimeframe(HigherTimeframe(HigherTimeframe(_TIMEFRAME))), "ZigZag", 2, 0))
              result = 1;
 
          break;
@@ -10503,6 +10508,177 @@ double Strategy_022(int COMMAND)
          }
 
          break;
+      }      
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+
+         break;
+      }
+      case _GET_PENDING_ORDER_EXPIRATION:
+      {
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_023(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+         
+   double   UpperZIGZAG1;
+   double   LowerZIGZAG1;
+   double   UpperZIGZAG2;
+   double   LowerZIGZAG2;
+
+   double   result         = 0;
+   
+   int      i;
+
+   switch(COMMAND)
+   {
+      case _OPEN_LONG:
+      {
+//         break;
+
+//         if(!OpenNewBar(_TIMEFRAME))
+//            break;
+
+         UpperZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         UpperZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+         LowerZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+         
+         if(Ask > getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true))
+            result = 1;
+
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         break;
+
+//         if(!OpenNewBar(_TIMEFRAME))
+//            break;
+
+         UpperZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         UpperZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+         LowerZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+
+         if(Bid < getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false))
+             result = 1;
+
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+         break;
+
+         UpperZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         UpperZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+         LowerZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+
+// somarina - spodny ZIGZAG sa ukaze vacsinou ked sme v strate
+//         if(Bid < getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false))
+//             result = 1;
+            
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+         break;
+
+         UpperZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         UpperZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
+         LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+         LowerZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
+
+// somarina - horny ZIGZAG sa ukaze vacsinou ked sme v strate
+//         if(Ask > getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true))
+//            result = 1;
+            
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+         break;
+      }
+      case _OPEN_PENDING_BUY_STOP:
+      {
+         break;
+      }
+      case _OPEN_PENDING_SELL_STOP:
+      {
+         break;
+      }
+      case _GET_PENDING_BUY_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_PENDING_SELL_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
+         double breakeven = 0;
+               
+         OrderSelect(0, SELECT_BY_POS);
+         if(OrderMagicNumber() != _MAGICNUMBER)
+            break;
+//            if(OrderProfit() > 0)
+         {
+            if(OrderType() == OP_BUY)
+            {
+//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+               result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+      
+               if(result <= OrderStopLoss())
+                  result = OrderStopLoss();
+            }
+            else
+            {
+//                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+               result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+      
+               if(result >= OrderStopLoss())
+                  result = OrderStopLoss();
+            }
+         }
+         
+         break;
+
       }      
       case _GET_TRAILED_TAKEPROFIT_PRICE:
       {
