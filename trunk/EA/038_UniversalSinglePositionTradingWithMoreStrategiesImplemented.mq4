@@ -11,7 +11,7 @@
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
-int   _STRATEGY_NUMBER              = 2;
+int   _STRATEGY_NUMBER              = 16;
 
 int   _MIN_STOPLOSS_DISTANCE        = 10;
 int   _MIN_TAKEPROFIT_DISTANCE      = 10;
@@ -32,10 +32,10 @@ extern string  poznamka2 = "1 - vyber timeframe podla kodu timeframe 1 - 9";
 extern int     _STRATEGY_TIMEFRAME_CHOICE    = 1;
 extern int     _STRATEGY_TIMEFRAME           = 1;
 
-extern int     _OPEN_SIGNAL_COMBINATION      = 1;  //2
-extern int     _CLOSE_SIGNAL_COMBINATION     = 1;  //4
-extern int     _STOPLOSS_COMBINATION         = 1;  //2
-extern int     _TRAILING_STOPLOSS_COMBINATION= 1;  //2
+extern int     _OPEN_SIGNAL_COMBINATION      = 1;  //27
+extern int     _CLOSE_SIGNAL_COMBINATION     = 1;  //3
+extern int     _STOPLOSS_COMBINATION         = 1;  //3
+extern int     _TRAILING_STOPLOSS_COMBINATION= 1;  //3
 
 int     _SIGNAL_COMBINATION           = 1;
 
@@ -299,6 +299,7 @@ void ModifyAllPositions(int MAGICNUMBER, double STOPLOSS, double TAKEPROFIT)
    }
 }
 //------------------------------------------------------------------------------------
+/*
 void ModifyPosition(int TICKETNUMBER, double STOPLOSS, double TAKEPROFIT)
 {
    STOPLOSS = NormalizeDouble(STOPLOSS, 4);
@@ -342,6 +343,7 @@ void ModifyPosition(int TICKETNUMBER, double STOPLOSS, double TAKEPROFIT)
 
 /*
 Old function without any STOPLOSS and TAKEPROFIT security check
+*/
 
 void ModifyPosition(int TICKETNUMBER, double STOPLOSS, double TAKEPROFIT)
 {
@@ -355,7 +357,7 @@ void ModifyPosition(int TICKETNUMBER, double STOPLOSS, double TAKEPROFIT)
 //   Print(OrderTicket(), " - ", OrderOpenPrice(), " - ", OrderStopLoss(), " - ", OrderTakeProfit(), " - ", STOPLOSS, " - ", TAKEPROFIT);
    OrderModify(OrderTicket(), OrderOpenPrice(), STOPLOSS, TAKEPROFIT, 0);
 }
-*/
+
 //------------------------------------------------------------------------------------
 // Close all positions
 //------------------------------------------------------------------------------------
@@ -1389,6 +1391,10 @@ double Strategy_002(int COMMAND)
                   result = 1;
                break;
             }
+            case 5:
+            {
+               break;
+            }
          }
 
          break;
@@ -1424,6 +1430,10 @@ double Strategy_002(int COMMAND)
                   result = 1;
                break;
             }
+            case 5:
+            {
+               break;
+            }
          }
 
          break;
@@ -1441,6 +1451,10 @@ double Strategy_002(int COMMAND)
             case 2:
             {
                result = iLow(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+            case 3:
+            {
                break;
             }
          }
@@ -1463,6 +1477,10 @@ double Strategy_002(int COMMAND)
             case 2:
             {
                result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+            case 3:
+            {
                break;
             }
          }
@@ -1556,7 +1574,7 @@ double Strategy_002(int COMMAND)
 double Strategy_003(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
    int      _MASIGNAL      = 9;
@@ -1577,10 +1595,27 @@ double Strategy_003(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-         if(MACDHistogram > MACDSignal && MACDHistogram > 0)
-//         if(MACDHistogram > MACDSignal && MACDHistogram < 0)
-//         if(MACDHistogram > MACDSignal)
-            result = 1;
+         switch(_OPEN_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram > 0)
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram > MACDSignal)
+                  result = 1;
+               break;
+            }
+         }
          
          break;
       }
@@ -1589,10 +1624,27 @@ double Strategy_003(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-         if(MACDHistogram < MACDSignal && MACDHistogram < 0)
-//         if(MACDHistogram < MACDSignal && MACDHistogram > 0)
-//         if(MACDHistogram < MACDSignal)
-            result = 1;
+         switch(_OPEN_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram < 0)
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram < MACDSignal)
+                  result = 1;
+               break;
+            }
+         }
 
          break;
       }
@@ -1601,12 +1653,38 @@ double Strategy_003(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
          
-//         if(MACDHistogram < 0)
-//         if(MACDHistogram < MACDSignal)
-//         if(MACDHistogram > 0 && MACDSignal > 0)
-//         if(MACDHistogram > 0 && MACDSignal > 0 && MACDHistogram < MACDSignal)
-//            result = 1;
-         
+         switch(_CLOSE_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+               if(MACDHistogram < 0)
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram < MACDSignal)
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram > 0 && MACDSignal > 0)
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+               if(MACDHistogram > 0 && MACDSignal > 0 && MACDHistogram < MACDSignal)
+                  result = 1;
+               break;
+            }
+            case 5:
+            {
+               break;
+            }
+         }
+
          break;
       }
       case _CLOSE_SHORT:
@@ -1614,21 +1692,59 @@ double Strategy_003(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
          
-//         if(MACDHistogram > 0)
-//         if(MACDHistogram > MACDSignal)
-//         if(MACDHistogram < 0 && MACDSignal < 0)
-//         if(MACDHistogram < 0 && MACDSignal < 0 && MACDHistogram > MACDSignal)
-//            result = 1;
+         switch(_CLOSE_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+               if(MACDHistogram > 0)
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram > MACDSignal)
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram < 0 && MACDSignal < 0)
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+               if(MACDHistogram < 0 && MACDSignal < 0 && MACDHistogram > MACDSignal)
+                  result = 1;
+               break;
+            }
+            case 5:
+            {
+               break;
+            }
+         }
 
          break;
       }
       case _GET_LONG_STOPLOSS_PRICE:
       {
-//         result = iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, 1);
-         result = iLow(_SYMBOL, _TIMEFRAME, 1);
-
-         if(result > Ask - 10*Point)
-            result = Ask - 10*Point;
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, 1);
+               break;
+            }
+            case 2:
+            {
+               result = iLow(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
 
          break;
       }
@@ -1638,11 +1754,23 @@ double Strategy_003(int COMMAND)
       }
       case _GET_SHORT_STOPLOSS_PRICE:
       {
-//         result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, 1);
-         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
-
-         if(result < Bid + 10*Point)
-            result = Bid + 10*Point;
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, 1);
+               break;
+            }
+            case 2:
+            {
+               result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
          
          break;
       }
@@ -1652,48 +1780,60 @@ double Strategy_003(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         if(OrdersTotal() == 1)
+         switch(_TRAILING_STOPLOSS_COMBINATION)
          {
-            OrderSelect(0, SELECT_BY_POS);
-            if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
-            if(OrderProfit() > 0)
+            case 1:
             {
-               if(OrderType() == OP_BUY)
+               break;
+            }
+            case 2:
+            {
+               if(OrdersTotal() == 1)
                {
-                  int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                  OrderSelect(0, SELECT_BY_POS);
+                  if(OrderMagicNumber() != _MAGICNUMBER)
+                     break;
+                  if(OrderProfit() > 0)
+                  {
+                     if(OrderType() == OP_BUY)
+                     {
+                        int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
                   
-                  double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
-                  double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
+                        double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
+                        double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
 
-                  if(Low1SL < Low2SL)
-                     result = Low1SL;
-                  else
-                     result = Low2SL;
+                        if(Low1SL < Low2SL)
+                           result = Low1SL;
+                        else
+                           result = Low2SL;
                   
-                  if(result > Bid - 10*Point)
-                     result = Bid - 10*Point;
+                        if(result > Bid - 10*Point)
+                           result = Bid - 10*Point;
                   
-                  if(result <= OrderStopLoss())
-                     result = 0;
-               }
-               else
-               {
-                  int j = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                        if(result <= OrderStopLoss())
+                           result = 0;
+                     }
+                     else
+                     {
+                        int j = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
 
-                  double High1SL = iHigh(_SYMBOL, _TIMEFRAME, 1);
-                  double High2SL = Ask + MathAbs(iHigh(_SYMBOL, _TIMEFRAME, j + 1) - OrderOpenPrice());
+                        double High1SL = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                        double High2SL = Ask + MathAbs(iHigh(_SYMBOL, _TIMEFRAME, j + 1) - OrderOpenPrice());
                   
-                  if(High1SL > High2SL)
-                     result = High1SL;
-                  else
-                     result = High2SL;
+                        if(High1SL > High2SL)
+                           result = High1SL;
+                        else
+                           result = High2SL;
                   
-                  if(result < Ask + 10*Point)
-                     result = Ask + 10*Point;
-                  if(result >= OrderStopLoss())
-                     result = 0;
+                        if(result < Ask + 10*Point)
+                           result = Ask + 10*Point;
+                        if(result >= OrderStopLoss())
+                           result = 0;
+                     }
+                  }
                }
+               
+               break;
             }
          }
          
@@ -1721,7 +1861,7 @@ double Strategy_003(int COMMAND)
 double Strategy_004(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
    int      _MASIGNAL      = 9;
@@ -1805,7 +1945,7 @@ double Strategy_004(int COMMAND)
 double Strategy_005(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
    int      _MASIGNAL      = 9;
@@ -1814,9 +1954,9 @@ double Strategy_005(int COMMAND)
 
    double   result         = 0;
 
-//   int      TIMEFRAME2 = _TIMEFRAME;
-   int      TIMEFRAME2 = HigherTimeframe(_TIMEFRAME);
-//   int      TIMEFRAME2 = HigherTimeframe(HigherTimeframe(_TIMEFRAME));
+   int      TIMEFRAME2 = _TIMEFRAME;
+//   TIMEFRAME2 = HigherTimeframe(_TIMEFRAME);
+   TIMEFRAME2 = HigherTimeframe(HigherTimeframe(_TIMEFRAME));
 
    double   MACDHistogram;
    double   MACDSignal;
@@ -1827,17 +1967,280 @@ double Strategy_005(int COMMAND)
       {
          MACDHistogram = iMACD(_SYMBOL, TIMEFRAME2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, TIMEFRAME2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
-//         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
-//         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-         if(MACDHistogram > MACDSignal && MACDHistogram < 0)
-//         if(MACDHistogram > MACDSignal)
-//         if(MACDHistogram > 0)
-//         if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
-         if(Open[0] > Open[1] && Open[1] > Open[2])
-//         if(Open[0] > Open[3])
-         if(Open[0] > Low[1] && Low[1] > Low[2])
-            result = 1;
+         switch(_OPEN_SIGNAL_COMBINATION)
+         {
+//-
+//1
+            case 1:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+//2            
+            case 5:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 6:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 7:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 8:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 9:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+//3
+            case 10:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 11:
+            {
+               if(MACDHistogram > MACDSignal && MACDHistogram < 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+//--
+//1
+            case 12:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 13:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+                  result = 1;
+               break;
+            }
+            case 14:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 15:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+//2            
+            case 16:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 17:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 18:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 19:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 20:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+//3
+            case 21:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 22:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+//--
+//1
+            case 23:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 24:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+                  result = 1;
+               break;
+            }
+            case 25:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 26:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+//2            
+            case 27:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 28:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 29:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Open[3])
+                  result = 1;
+               break;
+            }
+            case 30:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 31:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+//3
+            case 32:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2] && Open[2] > Open[3])
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+            case 33:
+            {
+               if(MACDHistogram > 0)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] > Open[3])
+               if(Open[0] > Low[1] && Low[1] > Low[2])
+                  result = 1;
+               break;
+            }
+         }
                   
          break;
       }
@@ -1845,55 +2248,374 @@ double Strategy_005(int COMMAND)
       {
          MACDHistogram = iMACD(_SYMBOL, TIMEFRAME2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, TIMEFRAME2, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
-//         MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
-//         MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-         if(MACDHistogram < MACDSignal && MACDHistogram > 0)
-//         if(MACDHistogram < MACDSignal)
-//         if(MACDHistogram < 0)
-//         if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
-         if(Open[0] < Open[1] && Open[1] < Open[2])
-//         if(Open[0] < Open[3])
-         if(Open[0] < High[1] && High[1] < High[2])
-            result = 1;
+         switch(_OPEN_SIGNAL_COMBINATION)
+         {
+//-
+//1
+            case 1:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+//2            
+            case 5:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 6:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 7:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 8:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 9:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+//3
+            case 10:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 11:
+            {
+               if(MACDHistogram < MACDSignal && MACDHistogram > 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+//--
+//1
+            case 12:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 13:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+                  result = 1;
+               break;
+            }
+            case 14:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 15:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+//2            
+            case 16:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 17:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 18:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 19:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 20:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+//3
+            case 21:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 22:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Open[0] > Open[1] && Open[1] > Open[2])
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+//--
+//1
+            case 23:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 24:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+                  result = 1;
+               break;
+            }
+            case 25:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 26:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+//2            
+            case 27:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 28:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 29:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+               if(Open[0] < Open[3])
+                  result = 1;
+               break;
+            }
+            case 30:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 31:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+//3
+            case 32:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2] && Open[2] < Open[3])
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+            case 33:
+            {
+               if(MACDHistogram < 0)
+               if(Open[0] < Open[1] && Open[1] < Open[2])
+               if(Open[0] < Open[3])
+               if(Open[0] < High[1] && High[1] < High[2])
+                  result = 1;
+               break;
+            }
+         }
          
          break;
       }
       case _CLOSE_LONG:
       {
-         if(iOpen(_SYMBOL, TIMEFRAME2, 0) < iOpen(_SYMBOL, TIMEFRAME2, 1))
-            result = 1;
-         if(iClose(_SYMBOL, TIMEFRAME2, 1) < iClose(_SYMBOL, TIMEFRAME2, 2))
-            result = 1;
-/*
-         if(iOpen(_SYMBOL, _TIMEFRAME, 0) < iOpen(_SYMBOL, _TIMEFRAME, 1))
-            result = 1;
-         if(iClose(_SYMBOL, _TIMEFRAME, 1) < iClose(_SYMBOL, _TIMEFRAME, 2))
-            result = 1;
-*/         
+         switch(_CLOSE_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+               if(iOpen(_SYMBOL, _TIMEFRAME, 0) < iOpen(_SYMBOL, _TIMEFRAME, 1))
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(iOpen(_SYMBOL, TIMEFRAME2, 0) < iOpen(_SYMBOL, TIMEFRAME2, 1))
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(iClose(_SYMBOL, _TIMEFRAME, 1) < iClose(_SYMBOL, _TIMEFRAME, 2))
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+               if(iClose(_SYMBOL, TIMEFRAME2, 1) < iClose(_SYMBOL, TIMEFRAME2, 2))
+                  result = 1;
+               break;
+            }
+            case 5:
+            {
+               break;
+            }
+         }
+
          break;
       }
       case _CLOSE_SHORT:
       {
-         if(iOpen(_SYMBOL, TIMEFRAME2, 0) > iOpen(_SYMBOL, TIMEFRAME2, 1))
-            result = 1;
-         if(iClose(_SYMBOL, TIMEFRAME2, 1) > iClose(_SYMBOL, TIMEFRAME2, 2))
-            result = 1;
-/*
-         if(iOpen(_SYMBOL, _TIMEFRAME, 0) > iOpen(_SYMBOL, _TIMEFRAME, 1))
-            result = 1;
-         if(iClose(_SYMBOL, _TIMEFRAME, 1) > iClose(_SYMBOL, _TIMEFRAME, 2))
-            result = 1;
-*/
+         switch(_CLOSE_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+               if(iOpen(_SYMBOL, _TIMEFRAME, 0) > iOpen(_SYMBOL, _TIMEFRAME, 1))
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(iOpen(_SYMBOL, TIMEFRAME2, 0) > iOpen(_SYMBOL, TIMEFRAME2, 1))
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(iClose(_SYMBOL, _TIMEFRAME, 1) > iClose(_SYMBOL, _TIMEFRAME, 2))
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+               if(iClose(_SYMBOL, TIMEFRAME2, 1) > iClose(_SYMBOL, TIMEFRAME2, 2))
+                  result = 1;
+               break;
+            }
+            case 5:
+            {
+               break;
+            }
+         }
+
          break;
       }
       case _GET_LONG_STOPLOSS_PRICE:
       {
-//         result = iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, 1);
-         result = iLow(_SYMBOL, _TIMEFRAME, 1);
-
-         if(result > Ask - 10*Point)
-            result = Ask - 10*Point;
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, 1);
+               break;
+            }
+            case 2:
+            {
+               result = iLow(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
 
          break;
       }
@@ -1903,11 +2625,23 @@ double Strategy_005(int COMMAND)
       }
       case _GET_SHORT_STOPLOSS_PRICE:
       {
-//         result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, 1);
-         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
-
-         if(result < Bid + 10*Point)
-            result = Bid + 10*Point;
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, 1);
+               break;
+            }
+            case 2:
+            {
+               result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
          
          break;
       }
@@ -1917,48 +2651,60 @@ double Strategy_005(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         if(OrdersTotal() == 1)
+         switch(_TRAILING_STOPLOSS_COMBINATION)
          {
-            OrderSelect(0, SELECT_BY_POS);
-            if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
-            if(OrderProfit() > 0)
+            case 1:
             {
-               if(OrderType() == OP_BUY)
+               break;
+            }
+            case 2:
+            {
+               if(OrdersTotal() == 1)
                {
-                  int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                  OrderSelect(0, SELECT_BY_POS);
+                  if(OrderMagicNumber() != _MAGICNUMBER)
+                     break;
+                  if(OrderProfit() > 0)
+                  {
+                     if(OrderType() == OP_BUY)
+                     {
+                        int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
                   
-                  double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
-                  double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
+                        double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
+                        double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
 
-                  if(Low1SL < Low2SL)
-                     result = Low1SL;
-                  else
-                     result = Low2SL;
+                        if(Low1SL < Low2SL)
+                           result = Low1SL;
+                        else
+                           result = Low2SL;
                   
-                  if(result > Bid - 10*Point)
-                     result = Bid - 10*Point;
+                        if(result > Bid - 10*Point)
+                           result = Bid - 10*Point;
                   
-                  if(result <= OrderStopLoss())
-                     result = 0;
-               }
-               else
-               {
-                  int j = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                        if(result <= OrderStopLoss())
+                           result = 0;
+                     }
+                     else
+                     {
+                        int j = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
 
-                  double High1SL = iHigh(_SYMBOL, _TIMEFRAME, 1);
-                  double High2SL = Ask + MathAbs(iHigh(_SYMBOL, _TIMEFRAME, j + 1) - OrderOpenPrice());
+                        double High1SL = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                        double High2SL = Ask + MathAbs(iHigh(_SYMBOL, _TIMEFRAME, j + 1) - OrderOpenPrice());
                   
-                  if(High1SL > High2SL)
-                     result = High1SL;
-                  else
-                     result = High2SL;
+                        if(High1SL > High2SL)
+                           result = High1SL;
+                        else
+                           result = High2SL;
                   
-                  if(result < Ask + 10*Point)
-                     result = Ask + 10*Point;
-                  if(result >= OrderStopLoss())
-                     result = 0;
+                        if(result < Ask + 10*Point)
+                           result = Ask + 10*Point;
+                        if(result >= OrderStopLoss())
+                           result = 0;
+                     }
+                  }
                }
+               
+               break;
             }
          }
          
@@ -1986,7 +2732,7 @@ double Strategy_005(int COMMAND)
 double Strategy_006(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
    int      _MASIGNAL      = 9;
@@ -2018,15 +2764,666 @@ double Strategy_006(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-         if(MAFast > MASlow)
-         if(Ask > MALong)
-//         if(MAFast > MALong)
-//         if(MALong1 < MALong)
-         if(MACDHistogram > MACDSignal)
-         if(MACDHistogram < 0)
-//         if(MACDHistogram > 0)
-            result = 1;
-                  
+         switch(_OPEN_SIGNAL_COMBINATION)
+         {
+//1
+            case 1:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 5:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 6:
+            {
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 7:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 8:
+            {
+               if(MACDHistogram < 0)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 9:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 10:
+            {
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 11:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 12:
+            {
+               if(MACDHistogram > 0)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 13:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 14:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 15:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 16:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 17:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 18:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 19:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 20:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//2
+            case 21:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 22:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 23:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 24:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 25:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 26:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 27:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 28:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 29:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 30:
+            {
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 31:
+            {
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 32:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 33:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 34:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 35:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 36:
+            {
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 37:
+            {
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 38:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 39:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 40:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 41:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 42:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 43:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 44:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 45:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 46:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 47:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 48:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 49:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 50:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//3
+            case 51:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 52:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 53:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }            
+            case 54:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 55:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 56:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 57:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }            
+            case 58:
+            {
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 59:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 60:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 61:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }            
+            case 62:
+            {
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 63:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 64:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 65:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }            
+            case 66:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 67:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 68:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 69:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 70:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//4
+            case 71:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 72:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 73:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 74:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 75:
+            {
+               if(MACDHistogram > MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+         }
+
          break;
       }
       case _OPEN_SHORT:
@@ -2039,14 +3436,665 @@ double Strategy_006(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-         if(MAFast < MASlow)
-         if(Bid < MALong)
-//         if(MAFast < MALong)
-//         if(MALong1 > MALong)
-         if(MACDHistogram < MACDSignal)
-         if(MACDHistogram > 0)
-//         if(MACDHistogram < 0)
-            result = 1;
+         switch(_OPEN_SIGNAL_COMBINATION)
+         {
+//1
+            case 1:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 3:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 4:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 5:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 6:
+            {
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 7:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 8:
+            {
+               if(MACDHistogram > 0)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 9:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 10:
+            {
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 11:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 12:
+            {
+               if(MACDHistogram < 0)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 13:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 14:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 15:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 16:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 17:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+                  result = 1;
+               break;
+            }
+            case 18:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 19:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 20:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//2
+            case 21:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 22:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 23:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 24:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 25:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 26:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 27:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 28:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 29:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 30:
+            {
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 31:
+            {
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 32:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 33:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 34:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 35:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 36:
+            {
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 37:
+            {
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 38:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 39:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 40:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 41:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 42:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 43:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 44:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 45:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+                  result = 1;
+               break;
+            }
+            case 46:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 47:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 48:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 49:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 50:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//3
+            case 51:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 52:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 53:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }            
+            case 54:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 55:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 56:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 57:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }            
+            case 58:
+            {
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 59:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 60:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 61:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }            
+            case 62:
+            {
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 63:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 64:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 65:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }            
+            case 66:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//
+            case 67:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+                  result = 1;
+               break;
+            }
+            case 68:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 69:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 70:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+//4
+            case 71:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 72:
+            {
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 73:
+            {
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 74:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram > 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+            case 75:
+            {
+               if(MACDHistogram < MACDSignal)
+               if(MACDHistogram < 0)
+               if(MAFast > MASlow)
+               if(Ask > MALong)
+               if(MAFast > MALong)
+               if(MALong1 < MALong)
+                  result = 1;
+               break;
+            }
+         }
                   
          break;
       }
@@ -2072,13 +4120,23 @@ double Strategy_006(int COMMAND)
       }
       case _GET_LONG_STOPLOSS_PRICE:
       {
-         break;
-
-//         result = iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, 1);
-         result = iLow(_SYMBOL, _TIMEFRAME, 1);
-
-         if(result > Ask - 10*Point)
-            result = Ask - 10*Point;
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = iFractals(_SYMBOL, _TIMEFRAME, MODE_LOWER, 1);
+               break;
+            }
+            case 2:
+            {
+               result = iLow(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
 
          break;
       }
@@ -2088,13 +4146,23 @@ double Strategy_006(int COMMAND)
       }
       case _GET_SHORT_STOPLOSS_PRICE:
       {
-         break;
-
-//         result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, 1);
-         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
-
-         if(result < Bid + 10*Point)
-            result = Bid + 10*Point;
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = iFractals(_SYMBOL, _TIMEFRAME, MODE_UPPER, 1);
+               break;
+            }
+            case 2:
+            {
+               result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
          
          break;
       }
@@ -2104,50 +4172,60 @@ double Strategy_006(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         break;
-
-         if(OrdersTotal() == 1)
+         switch(_TRAILING_STOPLOSS_COMBINATION)
          {
-            OrderSelect(0, SELECT_BY_POS);
-            if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
-            if(OrderProfit() > 0)
+            case 1:
             {
-               if(OrderType() == OP_BUY)
+               break;
+            }
+            case 2:
+            {
+               if(OrdersTotal() == 1)
                {
-                  int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                  OrderSelect(0, SELECT_BY_POS);
+                  if(OrderMagicNumber() != _MAGICNUMBER)
+                     break;
+                  if(OrderProfit() > 0)
+                  {
+                     if(OrderType() == OP_BUY)
+                     {
+                        int i = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
                   
-                  double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
-                  double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
+                        double Low1SL = iLow(_SYMBOL, _TIMEFRAME, 1);
+                        double Low2SL = Bid - MathAbs(OrderOpenPrice() - iLow(_SYMBOL, _TIMEFRAME, i + 1));
 
-                  if(Low1SL < Low2SL)
-                     result = Low1SL;
-                  else
-                     result = Low2SL;
+                        if(Low1SL < Low2SL)
+                           result = Low1SL;
+                        else
+                           result = Low2SL;
                   
-                  if(result > Bid - 10*Point)
-                     result = Bid - 10*Point;
+                        if(result > Bid - 10*Point)
+                           result = Bid - 10*Point;
                   
-                  if(result <= OrderStopLoss())
-                     result = 0;
-               }
-               else
-               {
-                  int j = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
+                        if(result <= OrderStopLoss())
+                           result = 0;
+                     }
+                     else
+                     {
+                        int j = iBarShift(_SYMBOL, _TIMEFRAME, OrderOpenTime());
 
-                  double High1SL = iHigh(_SYMBOL, _TIMEFRAME, 1);
-                  double High2SL = Ask + MathAbs(iHigh(_SYMBOL, _TIMEFRAME, j + 1) - OrderOpenPrice());
+                        double High1SL = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                        double High2SL = Ask + MathAbs(iHigh(_SYMBOL, _TIMEFRAME, j + 1) - OrderOpenPrice());
                   
-                  if(High1SL > High2SL)
-                     result = High1SL;
-                  else
-                     result = High2SL;
+                        if(High1SL > High2SL)
+                           result = High1SL;
+                        else
+                           result = High2SL;
                   
-                  if(result < Ask + 10*Point)
-                     result = Ask + 10*Point;
-                  if(result >= OrderStopLoss())
-                     result = 0;
+                        if(result < Ask + 10*Point)
+                           result = Ask + 10*Point;
+                        if(result >= OrderStopLoss())
+                           result = 0;
+                     }
+                  }
                }
+               
+               break;
             }
          }
          
@@ -2176,7 +4254,7 @@ double Strategy_006(int COMMAND)
 double Strategy_007(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
    int      _MASIGNAL      = 9;
@@ -2385,7 +4463,7 @@ double Strategy_007(int COMMAND)
 double Strategy_008(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
    int      _MASIGNAL      = 9;
@@ -2692,8 +4770,8 @@ double Strategy_008(int COMMAND)
 double Strategy_009(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = PERIOD_M30;
-   int      _TIMEFRAME_2   = PERIOD_H1;
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+   int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
    int      _MASIGNAL      = 9;
@@ -3060,7 +5138,7 @@ double Strategy_009(int COMMAND)
 double Strategy_010(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-   int      _TIMEFRAME     = Period();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
    int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
@@ -3134,7 +5212,7 @@ double Strategy_010(int COMMAND)
 //         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
 //         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
 //         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
             result = 1;
                   
          break;
@@ -3182,7 +5260,7 @@ double Strategy_010(int COMMAND)
 //         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
 //         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
 //         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
             result = 1;
                   
          break;
@@ -3230,7 +5308,7 @@ double Strategy_010(int COMMAND)
 //         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
 //         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
 //         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
             result = 1;
 
          break;
@@ -3330,7 +5408,7 @@ double Strategy_010(int COMMAND)
 //         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
 //         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
 //         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
             result = 1;
 
          break;
@@ -3670,7 +5748,7 @@ double Strategy_011(int COMMAND)
 //         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
 //         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
 //         if(Ask > getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
-//         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
+         if(Ask < getLastFractalValue(_SYMBOL, _TIMEFRAME, true))
             result = 1;
                   
          break;
@@ -3735,7 +5813,7 @@ double Strategy_011(int COMMAND)
 //         if(getLastFractalValue(_SYMBOL, _TIMEFRAME, false) < getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false))
 //         if(MathAbs(getLastFractalValue(_SYMBOL, _TIMEFRAME, true) - getLastFractalValue(_SYMBOL, _TIMEFRAME, false)) < MathAbs(getPreviousFractalValue(_SYMBOL, _TIMEFRAME, true) - getPreviousFractalValue(_SYMBOL, _TIMEFRAME, false)))
 //         if(Bid < getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
-//         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
+         if(Bid > getLastFractalValue(_SYMBOL, _TIMEFRAME, false))
             result = 1;
                   
          break;
@@ -4141,8 +6219,8 @@ double Strategy_011(int COMMAND)
 double Strategy_012(int COMMAND)
 {
    string   _SYMBOL        = Symbol();
-//   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
-   int      _TIMEFRAME     = _TIMEFRAME;
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+//   int      _TIMEFRAME     = _TIMEFRAME;
    int      _TIMEFRAME_2   = HigherTimeframe(_TIMEFRAME);
    int      _SLOWEMA       = 26;
    int      _FASTEMA       = 12;
@@ -5120,7 +7198,7 @@ double Strategy_013(int COMMAND)
       }
       case _GET_LONG_STOPLOSS_PRICE:
       {
-         break;
+//         break;
 
          result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false) - 5*Point;
 //         result = iLow(_SYMBOL, _TIMEFRAME, 1);
@@ -5132,7 +7210,7 @@ double Strategy_013(int COMMAND)
       }
       case _GET_SHORT_STOPLOSS_PRICE:
       {
-         break;
+//         break;
 
          result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true) + 5*Point;
 //         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
@@ -5152,7 +7230,7 @@ double Strategy_013(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         break;
+//         break;
 
          double breakeven = 0;
          
@@ -6026,7 +8104,7 @@ double Strategy_016(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-         switch(_SIGNAL_COMBINATION)
+         switch(_OPEN_SIGNAL_COMBINATION)
          {
             case 1:
             {
@@ -6445,7 +8523,7 @@ double Strategy_016(int COMMAND)
          MACDHistogram = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_MAIN, _SHIFT);
          MACDSignal = iMACD(_SYMBOL, _TIMEFRAME, _FASTEMA, _SLOWEMA, _MASIGNAL, _PRICE, MODE_SIGNAL, _SHIFT);
 
-         switch(_SIGNAL_COMBINATION)
+         switch(_OPEN_SIGNAL_COMBINATION)
          {
             case 1:
             {
@@ -6890,9 +8968,36 @@ double Strategy_016(int COMMAND)
       {
 //         break;
 
-         if(Bid > High[2])
-            result = 1;
-
+         switch(_CLOSE_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+               if(Bid > High[2])
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(OrdersTotal() == 1)
+               {
+                  OrderSelect(0, SELECT_BY_POS);
+                  if(OrderMagicNumber() != _MAGICNUMBER)
+                     break;
+                  if(OrderProfit() > 0)
+                  {
+                     if(High[2] > High[1])
+                        result = 1;
+                  }
+               }
+               
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
+         
          break;
 
          if(OrdersTotal() == 1)
@@ -6913,9 +9018,36 @@ double Strategy_016(int COMMAND)
       {
 //         break;
 
-         if(Ask < Low[2])
-            result = 1;
-
+         switch(_CLOSE_SIGNAL_COMBINATION)
+         {
+            case 1:
+            {
+               if(Ask < Low[2])
+                  result = 1;
+               break;
+            }
+            case 2:
+            {
+               if(OrdersTotal() == 1)
+               {
+                  OrderSelect(0, SELECT_BY_POS);
+                  if(OrderMagicNumber() != _MAGICNUMBER)
+                     break;
+                  if(OrderProfit() > 0)
+                  {
+                     if(Low[2] < Low[1])
+                        result = 1;
+                  }
+               }
+               
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
+         
          break;
 
          if(OrdersTotal() == 1)
@@ -6936,10 +9068,23 @@ double Strategy_016(int COMMAND)
       {
 //         break;
 
-         result = Low[2];
-//         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
-         if(result > Bid - 10*Point)
-            result = Bid - 10*Point;
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = Low[2];
+               break;
+            }
+            case 2:
+            {
+               result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
 
          break;
       }
@@ -6947,10 +9092,23 @@ double Strategy_016(int COMMAND)
       {
 //         break;
 
-         result = High[2];
-//         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
-         if(result < Ask + 10*Point)
-            result = Ask + 10*Point;
+         switch(_STOPLOSS_COMBINATION)
+         {
+            case 1:
+            {
+               result = High[2];
+               break;
+            }
+            case 2:
+            {
+               result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+               break;
+            }
+            case 3:
+            {
+               break;
+            }
+         }
          
          break;
       }
@@ -6964,74 +9122,90 @@ double Strategy_016(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         break;
+//         break;
 
 //         if(!OpenNewBar(_TIMEFRAME))
 //            break;
 
          double breakeven = 0;
 
-         if(OrdersTotal() == 1)
+         switch(_TRAILING_STOPLOSS_COMBINATION)
          {
-            OrderSelect(0, SELECT_BY_POS);
-            if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
-            if(OrderProfit() > 0)
+            case 1:
             {
-               if(OrderType() == OP_BUY)
+               if(OrdersTotal() == 1)
                {
-                  if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
-                     breakeven = OrderOpenPrice();
+                  OrderSelect(0, SELECT_BY_POS);
+                  if(OrderMagicNumber() != _MAGICNUMBER)
+                     break;
+                  if(OrderProfit() > 0)
+                  {
+                     if(OrderType() == OP_BUY)
+                     {
+                        if(iLow(_SYMBOL, _TIMEFRAME, 1) > OrderOpenPrice())
+                           breakeven = OrderOpenPrice();
                   
-                  if(breakeven > Bid - 10*Point)
-                     breakeven = Bid - 10*Point;
-               }
-               else
-               {
-                  if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
-                     breakeven = OrderOpenPrice();
+                        if(breakeven > Bid - 10*Point)
+                           breakeven = Bid - 10*Point;
+                     }
+                     else
+                     {
+                        if(iHigh(_SYMBOL, _TIMEFRAME, 1) < OrderOpenPrice())
+                           breakeven = OrderOpenPrice();
                   
-                  if(breakeven < Ask + 10*Point)
-                     breakeven = Ask + 10*Point;
+                        if(breakeven < Ask + 10*Point)
+                           breakeven = Ask + 10*Point;
+                     }
+                  }
                }
+
+               break;
             }
-         }
-
-         if(OrdersTotal() == 1)
-         {
-            OrderSelect(0, SELECT_BY_POS);
-            if(OrderMagicNumber() != _MAGICNUMBER)
-               break;
-            if(OrderProfit() > 0)
+            case 2:
             {
-               if(OrderType() == OP_BUY)
+               if(OrdersTotal() == 1)
                {
-//                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
-                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
+                  OrderSelect(0, SELECT_BY_POS);
+                  if(OrderMagicNumber() != _MAGICNUMBER)
+                     break;
+                  if(OrderProfit() > 0)
+                  {
+                     if(OrderType() == OP_BUY)
+                     {
+      //                  result = iLow(_SYMBOL, _TIMEFRAME, 1);
+                        result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
                   
-                  if(breakeven > result)
-                     result = breakeven;
+                        if(breakeven > result)
+                           result = breakeven;
                   
-                  if(result > Bid - 10*Point)
-                     result = Bid - 10*Point;
+                        if(result > Bid - 10*Point)
+                           result = Bid - 10*Point;
                   
-                  if(result <= OrderStopLoss())
-                     result = OrderStopLoss();
-               }
-               else
-               {
-//                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
-                  result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
+                        if(result <= OrderStopLoss())
+                           result = OrderStopLoss();
+                     }
+                     else
+                     {
+      //                  result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+                        result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
                   
-                  if(breakeven < result)
-                     result = breakeven;
+                        if(breakeven < result)
+                           result = breakeven;
 
-                  if(result < Ask + 10*Point)
-                     result = Ask + 10*Point;
+                        if(result < Ask + 10*Point)
+                           result = Ask + 10*Point;
                      
-                  if(result >= OrderStopLoss())
-                     result = OrderStopLoss();
+                        if(result >= OrderStopLoss())
+                           result = OrderStopLoss();
+                     }
+                  }
                }
+               
+               break;
+            }
+            case 3:
+            {
+               break;
             }
          }
          
@@ -7975,8 +10149,8 @@ double Strategy_022(int COMMAND)
       {
 //         break;
 
-//         if(!OpenNewBar(_TIMEFRAME))
-//            break;
+         if(!OpenNewBar(_TIMEFRAME))
+            break;
 
          LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
          LowerZIGZAGTime1 = getLastZIGZAGTime(_SYMBOL, _TIMEFRAME, false);
@@ -7999,8 +10173,11 @@ double Strategy_022(int COMMAND)
          if(LowerZIGZAGTime1 < UpperZIGZAGTime1)
          if(LastZIGZAGTime != LowerZIGZAGTime1)
 //         if(LastUpperFractal < EdgePrice && LastLowerFractal < EdgePrice)
-         if(Ask < EdgePrice)
-//         if(Low[1] < EdgePrice)
+//         if(Ask < EdgePrice)
+         if(Ask > EdgePrice)
+         if(Low[1] < EdgePrice)
+         if(Open[1] > EdgePrice && Close[1] > EdgePrice)
+         if(Low[2] > EdgePrice)
          {
             result = 1;
 
@@ -8018,8 +10195,8 @@ double Strategy_022(int COMMAND)
       {
 //         break;
 
-//         if(!OpenNewBar(_TIMEFRAME))
-//            break;
+         if(!OpenNewBar(_TIMEFRAME))
+            break;
 
          UpperZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
          UpperZIGZAGTime1 = getLastZIGZAGTime(_SYMBOL, _TIMEFRAME, true);
@@ -8042,8 +10219,11 @@ double Strategy_022(int COMMAND)
          if(LowerZIGZAGTime1 > UpperZIGZAGTime1)
          if(LastZIGZAGTime != UpperZIGZAGTime1)
 //         if(LastUpperFractal > EdgePrice && LastLowerFractal > EdgePrice)
-//         if(High[1] > EdgePrice)
-         if(Bid > EdgePrice)
+//         if(Bid > EdgePrice)
+         if(Bid < EdgePrice)
+         if(High[1] > EdgePrice)
+         if(Open[1] < EdgePrice && Close[1] < EdgePrice)
+         if(High[2] < EdgePrice)
          {
             result = 1;
 
@@ -8059,7 +10239,7 @@ double Strategy_022(int COMMAND)
       }
       case _CLOSE_LONG:
       {
-//         break;
+         break;
 
 //         if(!OpenNewBar(_TIMEFRAME))
 //            break;
@@ -8159,7 +10339,7 @@ double Strategy_022(int COMMAND)
       }
       case _CLOSE_SHORT:
       {
-//         break;
+         break;
 
 //         if(!OpenNewBar(_TIMEFRAME))
 //            break;
@@ -8261,8 +10441,8 @@ double Strategy_022(int COMMAND)
       {
 //         result = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
 //         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, false);
-//         result = iLow(_SYMBOL, _TIMEFRAME, 1);
-         result = Ask - 20*Point;
+         result = iLow(_SYMBOL, _TIMEFRAME, 1);
+//         result = Ask - 20*Point;
          
          break;
       }
@@ -8270,8 +10450,8 @@ double Strategy_022(int COMMAND)
       {
 //         result = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true);
 //         result = getLastFractalValue(_SYMBOL, _TIMEFRAME, true);
-//         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
-         result = Bid + 20*Point;
+         result = iHigh(_SYMBOL, _TIMEFRAME, 1);
+//         result = Bid + 20*Point;
          
          break;
       }
@@ -8301,7 +10481,7 @@ double Strategy_022(int COMMAND)
       }
       case _GET_TRAILED_STOPLOSS_PRICE:
       {
-         break;
+//         break;
 
          if(OrdersTotal() == 1)
          {
