@@ -253,10 +253,34 @@ void OpenPosition(bool SHORTLONG, double LOTS, double STOPLOSS, double TAKEPROFI
 {
    if(SHORTLONG)
    {
+      if(STOPLOSS > 0)
+      if(Ask + _MIN_STOPLOSS_DISTANCE*Point < STOPLOSS)
+      {
+         Print("Bad OrderOpen() STOPLOSS defined. Price Bid was: ", Ask, " and STOPLOSS was: ", STOPLOSS, " . STOPLOSS set to minimal value: ", Bid + _MIN_STOPLOSS_DISTANCE*Point);
+         STOPLOSS = Ask + _MIN_STOPLOSS_DISTANCE*Point;
+      }
+      if(TAKEPROFIT > 0)
+      if(Bid - _MIN_TAKEPROFIT_DISTANCE*Point > TAKEPROFIT)
+      {
+         Print("Bad OrderOpen() TAKEPROFIT defined. Price Bid was: ", Bid, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Bid - _MIN_TAKEPROFIT_DISTANCE*Point);
+         TAKEPROFIT = Bid - _MIN_TAKEPROFIT_DISTANCE*Point;
+      }
       OrderSend(Symbol(), OP_SELL, LOTS, Bid, SLIPPAGE, STOPLOSS, TAKEPROFIT, TimeToStr(Time[0]), MAGICNUMBER, 0, Red);
    }
    else
    {
+      if(STOPLOSS > 0)
+      if(Bid - _MIN_STOPLOSS_DISTANCE*Point < STOPLOSS)
+      {
+         Print("Bad OrderOpen() STOPLOSS defined. Price Bid was: ", Bid, " and STOPLOSS was: ", STOPLOSS, " . STOPLOSS set to minimal value: ", Bid - _MIN_STOPLOSS_DISTANCE*Point);
+         STOPLOSS = Bid - _MIN_STOPLOSS_DISTANCE*Point;
+      }
+      if(TAKEPROFIT > 0)
+      if(Ask + _MIN_TAKEPROFIT_DISTANCE*Point > TAKEPROFIT)
+      {
+         Print("Bad OrderOpen() TAKEPROFIT defined. Price Bid was: ", Ask, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Bid + _MIN_TAKEPROFIT_DISTANCE*Point);
+         TAKEPROFIT = Ask + _MIN_TAKEPROFIT_DISTANCE*Point;
+      }
       OrderSend(Symbol(), OP_BUY, LOTS, Ask, SLIPPAGE, STOPLOSS, TAKEPROFIT, TimeToStr(Time[0]), MAGICNUMBER, 0, Blue);
    }
    
@@ -1069,6 +1093,11 @@ double Strategy(int STRATEGY, int COMMAND)
       case 23:
       {
          return(Strategy_023(COMMAND));
+      }
+// TrendLinearReg indicator application
+      case 24:
+      {
+         return(Strategy_024(COMMAND));
       }
    }
 
@@ -10780,6 +10809,159 @@ TRAILING:
             }
          }
          
+         break;
+      }      
+      case _OPEN_PENDING_BUY_STOP:
+      {
+         break;
+      }
+      case _OPEN_PENDING_SELL_STOP:
+      {
+         break;
+      }
+      case _GET_PENDING_BUY_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_PENDING_SELL_STOP_PRICE:
+      {
+         break;
+      }
+      case _GET_LONG_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_SHORT_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_TRAILED_TAKEPROFIT_PRICE:
+      {
+         break;
+      }
+      case _GET_LOTS:
+      {
+         result = 0.1;
+//         result = GetLots(_MM_FIX_PERC_AVG_LAST_PROFIT, 0.2);
+         break;
+      }
+      case _GET_TRADED_TIMEFRAME:
+      {
+         result = _TIMEFRAME;
+
+         break;
+      }
+      case _GET_PENDING_ORDER_EXPIRATION:
+      {
+         break;
+      }
+   }
+      
+   return(result);
+}
+//------------------------------------------------------------------//------------------------------------------------------------------
+double Strategy_024(int COMMAND)
+{
+   string   _SYMBOL        = Symbol();
+   int      _TIMEFRAME     = getStrategyTimeframeByNumber(_STRATEGY_TIMEFRAME);
+         
+   double   result         = 0;
+   
+   double   TLR1, TLR2, TLR12, TLR22;
+   double   MacdDiff1, MacdDiff0;
+      
+   int      i;
+
+   switch(COMMAND)
+   {
+      case _OPEN_LONG:
+      {
+//         break;
+
+         if(!OpenNewBar(_TIMEFRAME))
+            break;
+
+         MacdDiff1 = iCustom(_SYMBOL, PERIOD_D1, "MACD+HistogramDiff+SignalDiff", 12, 26, 9, 2, 1);   
+         MacdDiff0 = iCustom(_SYMBOL, PERIOD_D1, "MACD+HistogramDiff+SignalDiff", 12, 26, 9, 2, 0);   
+
+         TLR1=iCustom(_SYMBOL, _TIMEFRAME ,"TrendLinearReg",34,0,1);
+         TLR12=iCustom(_SYMBOL, _TIMEFRAME ,"TrendLinearReg",34,0,2);
+
+         if(TLR1 > 1) break;
+         if(TLR12 > 1) TLR12 = 0;
+
+         if(MacdDiff1 > 0)
+         if(MacdDiff0 < 0)
+         if(MacdDiff0 < MacdDiff1)
+         if(TLR1 > TLR12)
+            result = 1;
+
+         break;
+      }
+      case _OPEN_SHORT:
+      {
+//         break;
+
+         if(!OpenNewBar(_TIMEFRAME))
+            break;
+
+         MacdDiff1 = iCustom(_SYMBOL, PERIOD_D1, "MACD+HistogramDiff+SignalDiff", 12, 26, 9, 2, 1);   
+         MacdDiff0 = iCustom(_SYMBOL, PERIOD_D1, "MACD+HistogramDiff+SignalDiff", 12, 26, 9, 2, 0);   
+
+         TLR2=iCustom(_SYMBOL, _TIMEFRAME ,"TrendLinearReg",34,1,1);
+         TLR22=iCustom(_SYMBOL, _TIMEFRAME ,"TrendLinearReg",34,1,2);
+
+         if(TLR2 > 1) break;
+         if(TLR22 > 1) TLR22 = 0;
+
+         if(MacdDiff1 < 0)
+         if(MacdDiff0 > 0)
+         if(MacdDiff0 > MacdDiff1)
+         if(TLR2 < TLR22)
+            result = 1;
+
+         break;
+      }
+      case _CLOSE_LONG:
+      {
+//         break;
+
+         if(!OpenNewBar(_TIMEFRAME))
+            break;
+
+         TLR1=iCustom(_SYMBOL, _TIMEFRAME ,"TrendLinearReg",34,0,1);
+
+         if(TLR1 > 1)
+            result = 1;
+            
+         break;
+      }
+      case _CLOSE_SHORT:
+      {
+//         break;
+
+         if(!OpenNewBar(_TIMEFRAME))
+            break;
+
+         TLR2=iCustom(_SYMBOL, _TIMEFRAME ,"TrendLinearReg",34,1,1);
+
+         if(TLR2 > 1)
+            result = 1;
+
+         break;
+      }
+      case _GET_LONG_STOPLOSS_PRICE:
+      {
+
+         break;
+      }
+      case _GET_SHORT_STOPLOSS_PRICE:
+      {
+
+         break;
+      }
+      case _GET_TRAILED_STOPLOSS_PRICE:
+      {
          break;
       }      
       case _OPEN_PENDING_BUY_STOP:
