@@ -32,6 +32,8 @@ extern int     _STRATEGY_TIMEFRAME           = 1;
 
 extern int     _OPEN_SIGNAL_COMBINATION      = 1;
 extern int     _CLOSE_SIGNAL_COMBINATION     = 1;
+extern int     _STOPLOSS_COMBINATION         = 1;  //3
+extern int     _TRAILING_STOPLOSS_COMBINATION= 1;  //3
 
 /*
 string poznamka1 = "0 - vyber timeframe podla dropdown menu - premenna _STRATEGY_TIMEFRAME sa ignoruje";
@@ -294,15 +296,40 @@ void OpenPosition(bool SHORTLONG, double LOTS, double STOPLOSS, double TAKEPROFI
 {
    if(SHORTLONG)
    {
+      if(STOPLOSS > 0)
+      if(Ask + _MIN_STOPLOSS_DISTANCE*Point < STOPLOSS)
+      {
+         Print("Bad OrderOpen() STOPLOSS defined. Price Bid was: ", Ask, " and STOPLOSS was: ", STOPLOSS, " . STOPLOSS set to minimal value: ", Bid + _MIN_STOPLOSS_DISTANCE*Point);
+         STOPLOSS = Ask + _MIN_STOPLOSS_DISTANCE*Point;
+      }
+      if(TAKEPROFIT > 0)
+      if(Bid - _MIN_TAKEPROFIT_DISTANCE*Point > TAKEPROFIT)
+      {
+         Print("Bad OrderOpen() TAKEPROFIT defined. Price Bid was: ", Bid, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Bid - _MIN_TAKEPROFIT_DISTANCE*Point);
+         TAKEPROFIT = Bid - _MIN_TAKEPROFIT_DISTANCE*Point;
+      }
       OrderSend(Symbol(), OP_SELL, LOTS, Bid, SLIPPAGE, STOPLOSS, TAKEPROFIT, StringConcatenate(MAGICNUMBER, ""), MAGICNUMBER, 0, Red);
    }
    else
    {
+      if(STOPLOSS > 0)
+      if(Bid - _MIN_STOPLOSS_DISTANCE*Point < STOPLOSS)
+      {
+         Print("Bad OrderOpen() STOPLOSS defined. Price Bid was: ", Bid, " and STOPLOSS was: ", STOPLOSS, " . STOPLOSS set to minimal value: ", Bid - _MIN_STOPLOSS_DISTANCE*Point);
+         STOPLOSS = Bid - _MIN_STOPLOSS_DISTANCE*Point;
+      }
+      if(TAKEPROFIT > 0)
+      if(Ask + _MIN_TAKEPROFIT_DISTANCE*Point > TAKEPROFIT)
+      {
+         Print("Bad OrderOpen() TAKEPROFIT defined. Price Bid was: ", Ask, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Bid + _MIN_TAKEPROFIT_DISTANCE*Point);
+         TAKEPROFIT = Ask + _MIN_TAKEPROFIT_DISTANCE*Point;
+      }
       OrderSend(Symbol(), OP_BUY, LOTS, Ask, SLIPPAGE, STOPLOSS, TAKEPROFIT, StringConcatenate(MAGICNUMBER, ""), MAGICNUMBER, 0, Blue);
    }
    
    LastBarTraded = Time[0];
 }
+
 //------------------------------------------------------------------------------------
 // Opens pending position according to arguments (sell stop || buy stop, amount of Lots to trade 
 //------------------------------------------------------------------------------------
@@ -352,29 +379,45 @@ void ModifyPosition(int TICKETNUMBER, double STOPLOSS, double TAKEPROFIT)
 //check minimal distance of STOPLOSS and TAKEPROFIT and if are not met - correct SL and TP values to minimal values and print message into LOG file
    if(OrderType() == OP_BUY)
    {
+      if(STOPLOSS > 0)
       if(Bid - _MIN_STOPLOSS_DISTANCE*Point < STOPLOSS)
       {
          Print("Bad OrderModify() STOPLOSS defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Bid was: ", Bid, " and STOPLOSS was: ", STOPLOSS, " . STOPLOSS set to minimal value: ", Bid - _MIN_STOPLOSS_DISTANCE*Point);
 //         STOPLOSS = Bid - _MIN_STOPLOSS_DISTANCE*Point;
       }
-      if(Bid + _MIN_TAKEPROFIT_DISTANCE*Point > TAKEPROFIT)
+      if(TAKEPROFIT > 0)
+      if(Ask + _MIN_TAKEPROFIT_DISTANCE*Point > TAKEPROFIT)
       {
-         Print("Bad OrderModify() TAKEPROFIT defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Bid was: ", Bid, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Bid + _MIN_TAKEPROFIT_DISTANCE*Point);
+         Print("Bad OrderModify() TAKEPROFIT defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Bid was: ", Ask, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Ask + _MIN_TAKEPROFIT_DISTANCE*Point);
 //         TAKEPROFIT = Bid + _MIN_TAKEPROFIT_DISTANCE*Point;
       }
+
+      if(STOPLOSS > 0)
+      if(OrderStopLoss() >= STOPLOSS)
+         STOPLOSS = OrderStopLoss();
+//      if(OrderTakeProfit() <= TAKEPROFIT)
+//         TAKEPROFIT = OrderStopLoss();
    }
    if(OrderType() == OP_SELL)
    {
+      if(STOPLOSS > 0)
       if(Ask + _MIN_STOPLOSS_DISTANCE*Point > STOPLOSS)
       {
          Print("Bad OrderModify() STOPLOSS defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Ask was: ", Ask, " and STOPLOSS was: ", STOPLOSS, " . STOPLOSS set to minimal value: ", Ask + _MIN_STOPLOSS_DISTANCE*Point);
 //         STOPLOSS = Ask + _MIN_STOPLOSS_DISTANCE*Point;
       }
-      if(Ask - _MIN_TAKEPROFIT_DISTANCE*Point < TAKEPROFIT)
+      if(TAKEPROFIT > 0)
+      if(Bid - _MIN_TAKEPROFIT_DISTANCE*Point < TAKEPROFIT)
       {
-         Print("Bad OrderModify() TAKEPROFIT defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Ask was: ", Ask, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Ask - _MIN_TAKEPROFIT_DISTANCE*Point);
+         Print("Bad OrderModify() TAKEPROFIT defined for order ticket: ", OrderTicket(), " and Magic number: ", OrderMagicNumber(), " . Price Ask was: ", Bid, " and TAKEPROFIT was: ", TAKEPROFIT, " . TAKEPROFIT set to minimal value: ", Bid - _MIN_TAKEPROFIT_DISTANCE*Point);
 //         TAKEPROFIT = Ask - _MIN_TAKEPROFIT_DISTANCE*Point;
       }
+
+      if(STOPLOSS > 0)
+      if(OrderStopLoss() <= STOPLOSS)
+         return;
+//      if(OrderTakeProfit() >= TAKEPROFIT)
+//         TAKEPROFIT = OrderStopLoss();
    }
    
 //   Print(Ask, " - ", Bid, " - ", OrderTicket(), " - ", OrderOpenPrice(), " - ", OrderStopLoss(), " - ", OrderTakeProfit(), " - ", STOPLOSS, " - ", TAKEPROFIT, " - ", OrderMagicNumber());
@@ -547,7 +590,7 @@ int getStrategyTimeframeByNumber(int _PERIOD)
       }
 }
 //------------------------------------------------------------------
-int HigherTimeframe(int Timeframe)
+int getHigherTimeframe(int Timeframe)
 {
    switch(Timeframe)
    {
@@ -567,6 +610,33 @@ int HigherTimeframe(int Timeframe)
          return (PERIOD_W1);
       case PERIOD_W1:
          return (PERIOD_MN1);
+   }
+   
+   return (Timeframe);
+}
+//------------------------------------------------------------------
+int getLowerTimeframe(int Timeframe)
+{
+   switch(Timeframe)
+   {
+      case PERIOD_M1:
+         return (PERIOD_M1);
+      case PERIOD_M5:
+         return (PERIOD_M1);
+      case PERIOD_M15:
+         return (PERIOD_M5);
+      case PERIOD_M30:
+         return (PERIOD_M15);
+      case PERIOD_H1:
+         return (PERIOD_M30);
+      case PERIOD_H4:
+         return (PERIOD_H1);
+      case PERIOD_D1:
+         return (PERIOD_H4);
+      case PERIOD_W1:
+         return (PERIOD_D1);
+      case PERIOD_MN1:
+         return (PERIOD_W1);
    }
    
    return (Timeframe);
@@ -1038,7 +1108,7 @@ double Strategy_024(int _COMMAND)
          LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
          LowerZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
          
-         if(Ask < getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false))
+         if(Ask < getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true))
             result = 1;
 
          break;
@@ -1055,7 +1125,7 @@ double Strategy_024(int _COMMAND)
          LowerZIGZAG1 = getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
          LowerZIGZAG2 = getPreviousZIGZAGValue(_SYMBOL, _TIMEFRAME, false);
 
-         if(Bid > getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, true))
+         if(Bid > getLastZIGZAGValue(_SYMBOL, _TIMEFRAME, false))
              result = 1;
 
          break;
