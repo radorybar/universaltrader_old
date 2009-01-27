@@ -190,11 +190,22 @@ bool TradeAllowed(int MAXORDERS)
 //Trade only once on each bar
    if(!IsTradeAllowed()) 
       return(false);
-   if(OrdersTotal() >= MAXORDERS)
+   if(getOrdersTotalByMagicnumber(_MAGICNUMBER) >= MAXORDERS)
       return(false);
    return(true);
 }
-
+//------------------------------------------------------------------
+int getOrdersTotalByMagicnumber(int MAGICNUMBER)
+{
+   int i = 0, OrdersTotalByMagicnumber = 0;
+   for(i = 0; i < OrdersTotal(); i++)
+   {
+      OrderSelect(i, SELECT_BY_POS);
+      if(OrderMagicNumber() == MAGICNUMBER)
+         OrdersTotalByMagicnumber++;
+   }
+   return(OrdersTotalByMagicnumber);
+}
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 //------------------------------------------------------------------
